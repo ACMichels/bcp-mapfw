@@ -17,7 +17,7 @@ public:
         release_assert(API_key_file.good(), "Invalid credentials file {}", API_key_file_location);
 
         // Read credentials.
-        char buf[64];
+        char buf[1024];
         API_key_file.getline(buf, 1024);
         cout << '!' << buf << '!' << '\n';
     }

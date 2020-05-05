@@ -7,6 +7,3 @@
 [submodule "robin-hood-hashing"]
 	path = robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing.git
-[submodule "curl"]
-	path = curl
-	url = https://github.com/curl/curl

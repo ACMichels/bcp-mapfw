@@ -3,3 +3,4 @@
 *.sh
 scip*/
 build/
+credentials.txt

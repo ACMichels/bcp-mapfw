@@ -24,6 +24,7 @@ Author: Edward Lam <ed@ed-lam.com>
 #include "scip/scipshell.h"
 #include "scip/scipdefplugins.h"
 #include "cxxopts.hpp"
+#include "Benchmarker.h"
 
 static
 SCIP_RETCODE start_solver(
@@ -217,5 +218,6 @@ int main(int argc, char** argv)
         SCIPprintError(retcode);
         return -1;
     }
+    testfunction();
     return 0;
 }

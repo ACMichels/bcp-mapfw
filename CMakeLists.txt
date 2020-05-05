@@ -137,6 +137,10 @@ set(MAPF_SOURCE_FILES
         bcp/Constraint_LengthBranching.cpp
         bcp/Output.h
         bcp/Output.cpp
+	bcp/Benchmarker.cpp
+	bcp/Benchmarker.h
+	bcp/Problem.cpp
+	bcp/Problem.h
 )
 include_directories(bcp/)
 

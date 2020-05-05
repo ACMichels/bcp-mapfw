@@ -62,6 +62,12 @@ add_subdirectory(fmt EXCLUDE_FROM_ALL)
 # Include cxxopts.
 include_directories(SYSTEM cxxopts/include)
 
+# Include curl
+set(CURL_LIBRARY "-lcurl") 
+find_package(CURL REQUIRED) 
+#add_executable (bcp-mapf convert.cpp)
+include_directories(${CURL_INCLUDE_DIR})
+
 # Include boost.
 #find_path(BOOST_INCLUDE_DIR
 #        NAMES boost/unordered/unordered_map.hpp
@@ -147,6 +153,7 @@ include_directories(bcp/)
 # Add executable.
 add_executable(bcp-mapf ${MAPF_SOURCE_FILES} ${TRUFFLEHOG_SOURCE_FILES})
 target_link_libraries(bcp-mapf fmt::fmt-header-only libscip ${LIBM})
+target_link_libraries(bcp-mapf ${CURL_LIBRARIES})
 
 # Enable the families of cuts.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WAITEDGE_CONFLICTS")

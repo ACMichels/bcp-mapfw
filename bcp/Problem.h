@@ -3,14 +3,15 @@
 
 class Problem
 {
-struct coord{
-    int x;
-    int y;
-
-    coord(int x, int y):x(x), y(y){}
-};
-
 private:
+    struct coord{
+        int x;
+        int y;
+
+        coord(int x, int y):x(x), y(y){}
+    };
+
+public:
     int width;
     int height;
     int id;
@@ -19,7 +20,6 @@ private:
     std::vector<coord> start_coords;
     std::vector<coord> goal_coords;
 
-public:
     Problem(const nlohmann::json problem_json);
     ~Problem();
 

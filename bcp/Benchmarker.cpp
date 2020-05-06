@@ -141,16 +141,11 @@ public:
 
     }
 
-    void run(int problem_id)
-    {
-        load(problem_id);
-    }
-
 };
 
 void testfunction()
 {
-    std::cout << "Test\n";
+    std::cout << "Testfunction called\n";
     Benchmarker bm;
     bm.load(2);
 }

@@ -22,6 +22,7 @@ Author: Edward Lam <ed@ed-lam.com>
 
 #include "AgentsData.h"
 #include "Map.h"
+#include "Problem.h"
 
 namespace TruffleHog
 {
@@ -36,6 +37,7 @@ struct Instance
     Instance() = default;
     Instance(const char* scenario_path,
              const Agent nb_agents = std::numeric_limits<Agent>::max());
+    Instance(const Problem problem);
     Instance(const Instance&) = default;
     Instance(Instance&&) = default;
     Instance& operator=(const Instance&) = default;

@@ -127,6 +127,33 @@ void read_map(const char* const map_path, Map& map)
     map_file.close();
 }
 
+void read_map(Problem problem, Map& map)
+{
+    int width = problem.width+2;
+    int height = problem.height+2;
+
+    // Create map.
+    map.resize(width, height);
+
+    // Read grid.
+    Node n = width + 1; // Start reading into the second row, second column of the grid
+    for (int i = 0; i < problem.height; i++)
+    {
+        for (int j = 0; j < problem.width; j++)
+        {
+            if (problem.grid[width*i+j])
+                map.set_passable(n);
+            n++;
+        }
+        n += 2;
+    }
+
+    n += width + 1; // Should be +2 but already counted a +1 from the previous \n
+    release_assert(n == map.size(), "Unexpected number of tiles");
+
+}
+
+
 Instance::Instance(const char* scenario_path, const Agent nb_agents)
 {
     // Read agents.
@@ -222,6 +249,44 @@ Instance::Instance(const char* scenario_path, const Agent nb_agents)
         const auto goal_tile = goal_y * map.width() + goal_x;
         release_assert(goal_tile < map.size() && map[goal_tile],
                        "Agent {} ends at an obstacle", a);
+    }
+}
+
+Instance::Instance(const Problem problem)
+{
+    // Read map.
+    read_map(problem, map);
+
+    // Read agents.
+    {
+        // Read agents data.
+        {
+            Position start_x;
+            Position start_y;
+            Position goal_x;
+            Position goal_y;
+            for (int i = 0; i < problem.agent_n; i++)
+            {
+                // Initially fill values
+                start_x = problem.start_coords[i].x;
+                start_y = problem.start_coords[i].y;
+                goal_x = problem.goal_coords[i].x;
+                goal_y = problem.goal_coords[i].y;
+
+                // Add padding.
+                start_x++;
+                start_y++;
+                goal_x++;
+                goal_y++;
+
+                // Store.
+                agents.add_agent(start_x, start_y, goal_x, goal_y, map);
+            }
+        }
+        if (agents.empty())
+        {
+            err("No agents in scenario");
+        }
     }
 }
 

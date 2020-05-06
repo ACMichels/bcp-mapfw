@@ -53,11 +53,15 @@ public:
             res = curl_easy_perform(curl);
             /* Check for errors */
             if(res != CURLE_OK)
-                fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+                err("curl_easy_perform() failed: {}\n", curl_easy_strerror(res));
 
             /* always cleanup */
             curl_easy_cleanup(curl);
             std::cout << res << "\n";
+        }
+        else
+        {
+            err("curl setup failed");
         }
         curl_global_cleanup();
 

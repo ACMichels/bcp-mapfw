@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
+#include <vector>
+#include <Problem.h>
 
 class Benchmarker
 {
@@ -18,6 +18,7 @@ private:
     };
 
     int benchmark_id;
+    std::vector<Problem> problems;
 
 
 
@@ -45,6 +46,11 @@ private:
 public:
 
     Benchmarker()
+    {
+
+    }
+
+    ~Benchmarker()
     {
 
     }
@@ -102,20 +108,20 @@ public:
             if(res != CURLE_OK){
                 err("curl_easy_perform() failed: {}\n", curl_easy_strerror(res));
             } else {
-                json json_data = json::parse(chunk.memory);
+                nlohmann::json json_data = nlohmann::json::parse(chunk.memory);
 
                 /* Setup problems */
                 benchmark_id = json_data["attempt"];
-                for (json json_problem : json_data["problems"])
+                for (nlohmann::json json_problem : json_data["problems"])
                 {
-                    std::cout << json_problem << "\n";
+                    problems.push_back(Problem(json_problem));
+//                    std::cout << json_problem << "\n";
                 }
             }
 
             /* always cleanup */
             curl_easy_cleanup(curl); // Also deletes API_token
             delete headers;
-
 
 
         }

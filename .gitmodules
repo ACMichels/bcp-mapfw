@@ -7,3 +7,6 @@
 [submodule "robin-hood-hashing"]
 	path = robin-hood-hashing
 	url = https://github.com/martinus/robin-hood-hashing.git
+[submodule "json"]
+	path = json
+	url = https://github.com/nlohmann/json

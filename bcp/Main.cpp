@@ -25,6 +25,168 @@ Author: Edward Lam <ed@ed-lam.com>
 #include "scip/scipdefplugins.h"
 #include "cxxopts.hpp"
 #include "Benchmarker.h"
+#include <stdlib.h>
+
+static SCIP_RETCODE setup_solver(SCIP** scip)
+{
+    SCIP_CALL(SCIPcreate(scip));
+
+    // Set up plugins.
+    {
+        // Include default SCIP plugins.
+        SCIP_CALL(SCIPincludeDefaultPlugins(*scip));
+
+        // Disable parallel solve.
+        SCIP_CALL(SCIPsetIntParam(*scip, "parallel/maxnthreads", 1));
+        SCIP_CALL(SCIPsetIntParam(*scip, "lp/threads", 1));
+
+        // Set parameters.
+        SCIP_CALL(SCIPsetIntParam(*scip, "presolving/maxrounds", 0));
+        SCIP_CALL(SCIPsetIntParam(*scip, "propagating/rootredcost/freq", -1));
+        SCIP_CALL(SCIPsetIntParam(*scip, "separating/maxaddrounds", -1));
+        SCIP_CALL(SCIPsetIntParam(*scip, "separating/maxstallrounds", 5));
+        SCIP_CALL(SCIPsetIntParam(*scip, "separating/maxstallroundsroot", 20));
+        SCIP_CALL(SCIPsetIntParam(*scip, "separating/cutagelimit", -1));
+
+        // Turn off all separation algorithms.
+        SCIP_CALL(SCIPsetSeparating(*scip, SCIP_PARAMSETTING_OFF, TRUE));
+
+        // Turn on aggressive primal heuristics.
+        SCIP_CALL(SCIPsetHeuristics(*scip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE));
+
+        // Turn off some primal heuristics.
+        {
+            const auto nheurs = SCIPgetNHeurs(*scip);
+            auto heurs = SCIPgetHeurs(*scip);
+            for (Int idx = 0; idx < nheurs; ++idx)
+            {
+                auto heur = heurs[idx];
+                const String name(SCIPheurGetName(heur));
+                if (name == "alns" ||
+                    name == "bound" ||
+                    name == "coefdiving" ||
+                    name == "crossover" ||
+                    name == "dins" ||
+                    name == "fixandinfer" ||
+                    name == "gins" ||
+                    name == "guideddiving" ||
+                    name == "intdiving" ||
+                    name == "localbranching" ||
+                    name == "locks" ||
+                    name == "mutation" ||
+                    name == "oneopt" ||
+                    name == "rens" ||
+                    name == "repair" ||
+                    name == "rins" ||
+                    name == "trivial" ||
+                    name == "zeroobj" ||
+                    name == "zirounding" ||
+                    name == "proximity" || // Buggy
+                    name == "twoopt")      // Buggy
+                {
+                    SCIPheurSetFreq(heur, -1);
+                }
+            }
+        }
+    }
+    return SCIP_OKAY;
+}
+
+static SCIP_RETCODE cleanup_solver(SCIP* scip)
+{
+    // Free memory.
+    SCIP_CALL(SCIPfree(&scip));
+
+    // Check if memory is leaked.
+    BMScheckEmptyMemory();
+
+    return SCIP_OKAY;
+}
+
+static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, Agent agents_limit)
+{
+    std::cout << "SHOULD NOT GO HERE!!!\n";
+    // Initialize SCIP.
+    SCIP* scip = nullptr;
+    const SCIP_RETCODE retcode = setup_solver(&scip);
+    if (retcode != SCIP_OKAY)
+    {
+        return retcode;
+    }
+
+
+    // Read instance.
+    release_assert(agents_limit > 0, "Cannot limit to {} number of agents", agents_limit);
+    SCIP_CALL(read_instance(scip, instance_file.c_str(), agents_limit));
+
+    // Set time limit.
+    if (time_limit > 0)
+    {
+        SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
+    }
+
+    // Solve.
+    SCIP_CALL(SCIPsolve(scip));
+
+    // Output.
+    {
+        // Print.
+        println("");
+        SCIP_CALL(SCIPprintStatistics(scip, NULL));
+
+        // Write best solution to file.
+        SCIP_CALL(write_best_solution(scip));
+    }
+
+    // Clean up
+    return cleanup_solver(scip);
+
+}
+
+static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real time_limit, Agent agents_limit)
+{
+    Benchmarker bm;
+
+    bm.load(instance_index);
+    std::cout << bm.problems.size();
+
+    for (int i = 0; i < bm.problems.size(); i++)
+    {
+        Problem problem = *bm.problems[i];
+        std::cout << problem.start_coords[1].x << "\n";
+        // Initialize SCIP.
+        SCIP* scip = nullptr;
+        setup_solver(&scip);
+
+        // Read instance.
+        SCIP_CALL(read_instance(scip, problem));
+
+        // Set time limit.
+        if (time_limit > 0)
+        {
+            SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
+        }
+        // Solve.
+        SCIP_CALL(SCIPsolve(scip));
+
+        // Output.
+        {
+            // Print.
+            println("");
+            SCIP_CALL(SCIPprintStatistics(scip, NULL));
+
+            // Write best solution to file.
+            SCIP_CALL(write_best_solution(scip));
+        }
+
+        // Clean up
+        cleanup_solver(scip);
+    }
+
+
+
+    return SCIP_OKAY;
+}
 
 static
 SCIP_RETCODE start_solver(
@@ -34,6 +196,9 @@ SCIP_RETCODE start_solver(
 {
     // Parse program options.
     String instance_file;
+    bool file_mode = false;
+    std::vector<int> instance_index;
+    bool index_mode = false;
     SCIP_Real time_limit = 0;
     Agent agents_limit = std::numeric_limits<Agent>::max();
     try
@@ -46,6 +211,7 @@ SCIP_RETCODE start_solver(
         options.add_options()
             ("help", "Print help")
             ("f,file", "Path to instance file", cxxopts::value<Vector<String>>())
+            ("i,index", "Index on instance in database", cxxopts::value<Vector<int>>())
             ("t,time-limit", "Time limit in seconds", cxxopts::value<SCIP_Real>())
             ("a,agents-limit", "Read first N agents only", cxxopts::value<int>())
         ;
@@ -55,7 +221,7 @@ SCIP_RETCODE start_solver(
         auto result = options.parse(argc, argv);
 
         // Print help.
-        if (result.count("help") || !result.count("file"))
+        if (result.count("help") || !(result.count("file") || result.count("index")))
         {
             println("{}", options.help());
             exit(0);
@@ -64,7 +230,15 @@ SCIP_RETCODE start_solver(
         // Get path to instance.
         if (result.count("file"))
         {
+            file_mode = true;
             instance_file = result["file"].as<Vector<String>>().at(0);
+        }
+
+        // Get path to instance.
+        if (result.count("index"))
+        {
+            index_mode = true;
+            instance_index = result["index"].as<Vector<int>>();
         }
 
         // Get time limit.
@@ -114,97 +288,24 @@ SCIP_RETCODE start_solver(
 #endif
     println("");
 
-    // Initialize SCIP.
-    SCIP* scip = nullptr;
-    SCIP_CALL(SCIPcreate(&scip));
 
-    // Set up plugins.
+    if (file_mode)
     {
-        // Include default SCIP plugins.
-        SCIP_CALL(SCIPincludeDefaultPlugins(scip));
-
-        // Disable parallel solve.
-        SCIP_CALL(SCIPsetIntParam(scip, "parallel/maxnthreads", 1));
-        SCIP_CALL(SCIPsetIntParam(scip, "lp/threads", 1));
-
-        // Set parameters.
-        SCIP_CALL(SCIPsetIntParam(scip, "presolving/maxrounds", 0));
-        SCIP_CALL(SCIPsetIntParam(scip, "propagating/rootredcost/freq", -1));
-        SCIP_CALL(SCIPsetIntParam(scip, "separating/maxaddrounds", -1));
-        SCIP_CALL(SCIPsetIntParam(scip, "separating/maxstallrounds", 5));
-        SCIP_CALL(SCIPsetIntParam(scip, "separating/maxstallroundsroot", 20));
-        SCIP_CALL(SCIPsetIntParam(scip, "separating/cutagelimit", -1));
-
-        // Turn off all separation algorithms.
-        SCIP_CALL(SCIPsetSeparating(scip, SCIP_PARAMSETTING_OFF, TRUE));
-
-        // Turn on aggressive primal heuristics.
-        SCIP_CALL(SCIPsetHeuristics(scip, SCIP_PARAMSETTING_AGGRESSIVE, TRUE));
-
-        // Turn off some primal heuristics.
+        const SCIP_RETCODE retcode = run_file_solver(instance_file, time_limit, agents_limit);
+        if (retcode != SCIP_OKAY)
         {
-            const auto nheurs = SCIPgetNHeurs(scip);
-            auto heurs = SCIPgetHeurs(scip);
-            for (Int idx = 0; idx < nheurs; ++idx)
-            {
-                auto heur = heurs[idx];
-                const String name(SCIPheurGetName(heur));
-                if (name == "alns" ||
-                    name == "bound" ||
-                    name == "coefdiving" ||
-                    name == "crossover" ||
-                    name == "dins" ||
-                    name == "fixandinfer" ||
-                    name == "gins" ||
-                    name == "guideddiving" ||
-                    name == "intdiving" ||
-                    name == "localbranching" ||
-                    name == "locks" ||
-                    name == "mutation" ||
-                    name == "oneopt" ||
-                    name == "rens" ||
-                    name == "repair" ||
-                    name == "rins" ||
-                    name == "trivial" ||
-                    name == "zeroobj" ||
-                    name == "zirounding" ||
-                    name == "proximity" || // Buggy
-                    name == "twoopt")      // Buggy
-                {
-                    SCIPheurSetFreq(heur, -1);
-                }
-            }
+            return retcode;
         }
     }
 
-    // Read instance.
-    release_assert(agents_limit > 0, "Cannot limit to {} number of agents", agents_limit);
-    SCIP_CALL(read_instance(scip, instance_file.c_str(), agents_limit));
-
-    // Set time limit.
-    if (time_limit > 0)
+    if (index_mode)
     {
-        SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
+        const SCIP_RETCODE retcode = run_index_solver(instance_index, time_limit, agents_limit);
+        if (retcode != SCIP_OKAY)
+        {
+            return retcode;
+        }
     }
-
-    // Solve.
-    SCIP_CALL(SCIPsolve(scip));
-
-    // Output.
-    {
-        // Print.
-        println("");
-        SCIP_CALL(SCIPprintStatistics(scip, NULL));
-
-        // Write best solution to file.
-        SCIP_CALL(write_best_solution(scip));
-    }
-
-    // Free memory.
-    SCIP_CALL(SCIPfree(&scip));
-
-    // Check if memory is leaked.
-    BMScheckEmptyMemory();
 
     // Done.
     return SCIP_OKAY;
@@ -218,6 +319,5 @@ int main(int argc, char** argv)
         SCIPprintError(retcode);
         return -1;
     }
-    testfunction();
     return 0;
 }

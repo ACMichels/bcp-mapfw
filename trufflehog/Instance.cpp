@@ -19,6 +19,7 @@ Author: Edward Lam <ed@ed-lam.com>
 
 #include <fstream>
 #include "Instance.h"
+#include "iostream"
 
 namespace TruffleHog
 {
@@ -121,13 +122,13 @@ void read_map(const char* const map_path, Map& map)
         }
     }
     n += width + 1; // Should be +2 but already counted a +1 from the previous \n
-    release_assert(n == map.size(), "Unexpected number of tiles");
+    release_assert(n == map.size(), "Unexpected number of tiles. {} /= {}", n, map.size());
 
     // Close file.
     map_file.close();
 }
 
-void read_map(Problem problem, Map& map)
+void read_map(const Problem& problem, Map& map)
 {
     int width = problem.width+2;
     int height = problem.height+2;
@@ -141,15 +142,23 @@ void read_map(Problem problem, Map& map)
     {
         for (int j = 0; j < problem.width; j++)
         {
-            if (problem.grid[width*i+j])
+            if (problem.grid[problem.width*i+j])
+            {
                 map.set_passable(n);
+                std::cout << ".";
+            }
+            else
+            {
+                std::cout << "@";
+            }
             n++;
         }
+        std::cout << "\n";
         n += 2;
     }
 
-    n += width + 1; // Should be +2 but already counted a +1 from the previous \n
-    release_assert(n == map.size(), "Unexpected number of tiles");
+    n += width - 1; // Should be +2 but already counted a +1 from the previous \n
+    release_assert(n == map.size(), "Unexpected number of tiles. {} /= {}", n, map.size());
 
 }
 
@@ -252,7 +261,7 @@ Instance::Instance(const char* scenario_path, const Agent nb_agents)
     }
 }
 
-Instance::Instance(const Problem problem)
+Instance::Instance(const Problem& problem)
 {
     // Read map.
     read_map(problem, map);

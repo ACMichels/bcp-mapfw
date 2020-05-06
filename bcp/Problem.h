@@ -1,3 +1,9 @@
+
+#ifndef MAPFW_PROBLEM_H
+#define MAPFW_PROBLEM_H
+
+
+
 #include <nlohmann/json.hpp>
 #include <vector>
 
@@ -20,12 +26,14 @@ public:
     std::vector<coord> start_coords;
     std::vector<coord> goal_coords;
 
-    Problem(const nlohmann::json problem_json);
+    Problem(const nlohmann::json& problem_json);
     ~Problem();
 
 
 
 };
+
+#endif
 
 
 

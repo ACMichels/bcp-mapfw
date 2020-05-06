@@ -22,12 +22,17 @@ Author: Edward Lam <ed@ed-lam.com>
 
 #include "Includes.h"
 #include "scip/scip.h"
+#include "Problem.h"
 
 // Read instance from file
 SCIP_RETCODE read_instance(
     SCIP* scip,                                                  // SCIP
     const char* scenario_path,                                   // File path to scenario
     const Agent nb_agents = std::numeric_limits<Agent>::max()    // Number of agents to read
+);
+SCIP_RETCODE read_instance(
+    SCIP* scip,                   // SCIP
+    Problem& problem               // Problem of scenario
 );
 
 #endif

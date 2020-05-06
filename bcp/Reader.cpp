@@ -18,6 +18,7 @@ Author: Edward Lam <ed@ed-lam.com>
 */
 
 #include "Reader.h"
+#include "iostream"
 #include "Includes.h"
 #include "ProblemData.h"
 #include <regex>
@@ -59,6 +60,29 @@ SCIP_RETCODE read_instance(
 
     // Create the problem.
     SCIP_CALL(SCIPprobdataCreate(scip, instance_name.c_str(), instance, astar));
+
+    // Done.
+    return SCIP_OKAY;
+}
+
+
+SCIP_RETCODE read_instance(
+    SCIP* scip,                   // SCIP
+    Problem& problem               // Problem of scenario
+)
+{
+
+    // Load instance.
+    auto instance = std::make_shared<Instance>(problem);
+
+    // Create pricing solver.
+    auto astar = std::make_shared<AStar>(instance->map);
+
+    instance->map.print();
+
+
+    // Create the problem.
+    SCIP_CALL(SCIPprobdataCreate(scip, std::to_string(problem.id).c_str(), instance, astar));
 
     // Done.
     return SCIP_OKAY;

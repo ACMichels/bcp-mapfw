@@ -108,11 +108,7 @@ static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, 
     std::cout << "SHOULD NOT GO HERE!!!\n";
     // Initialize SCIP.
     SCIP* scip = nullptr;
-    const SCIP_RETCODE retcode = setup_solver(&scip);
-    if (retcode != SCIP_OKAY)
-    {
-        return retcode;
-    }
+    SCIP_CALL(setup_solver(&scip));
 
 
     // Read instance.
@@ -139,7 +135,9 @@ static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, 
     }
 
     // Clean up
-    return cleanup_solver(scip);
+    SCIP_CALL(cleanup_solver(scip));
+
+    return SCIP_OKAY;
 
 }
 
@@ -156,7 +154,7 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
         std::cout << problem.start_coords[1].x << "\n";
         // Initialize SCIP.
         SCIP* scip = nullptr;
-        setup_solver(&scip);
+        SCIP_CALL(setup_solver(&scip));
 
         // Read instance.
         SCIP_CALL(read_instance(scip, problem));
@@ -180,7 +178,7 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
         }
 
         // Clean up
-        cleanup_solver(scip);
+        SCIP_CALL(cleanup_solver(scip));
     }
 
 
@@ -291,20 +289,12 @@ SCIP_RETCODE start_solver(
 
     if (file_mode)
     {
-        const SCIP_RETCODE retcode = run_file_solver(instance_file, time_limit, agents_limit);
-        if (retcode != SCIP_OKAY)
-        {
-            return retcode;
-        }
+        SCIP_CALL(run_file_solver(instance_file, time_limit, agents_limit));
     }
 
     if (index_mode)
     {
-        const SCIP_RETCODE retcode = run_index_solver(instance_index, time_limit, agents_limit);
-        if (retcode != SCIP_OKAY)
-        {
-            return retcode;
-        }
+        SCIP_CALL(run_index_solver(instance_index, time_limit, agents_limit));
     }
 
     // Done.

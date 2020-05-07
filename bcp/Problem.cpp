@@ -37,8 +37,8 @@ Problem::Problem(const nlohmann::json& problem_json)
     }
 
     // Check
-    release_assert(start_coords.size() == agent_n, "start_coords does not have the right amount of coords ({} /= {})", start_coords.size(), agent_n);
-    release_assert(goal_coords.size() == agent_n, "goal_coords does not have the right amount of coords ({} /= {})", goal_coords.size(), agent_n);
+    release_assert(start_coords.size() == (unsigned int)agent_n, "start_coords does not have the right amount of coords ({} /= {})", start_coords.size(), agent_n);
+    release_assert(goal_coords.size() == (unsigned int)agent_n, "goal_coords does not have the right amount of coords ({} /= {})", goal_coords.size(), agent_n);
 }
 
 void Problem::to_json(nlohmann::json& return_json)
@@ -49,7 +49,7 @@ void Problem::to_json(nlohmann::json& return_json)
     for (int a = 0; a < agent_n; a++)
     {
         nlohmann::json j2;
-        for (int c = 0; c < solution->paths[a].size(); c++)
+        for (unsigned int c = 0; c < solution->paths[a].size(); c++)
         {
             j2[c].push_back(solution->paths[a][c].x);
             j2[c].push_back(solution->paths[a][c].y);

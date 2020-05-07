@@ -48,7 +48,7 @@ Benchmarker::Benchmarker()
 
 Benchmarker::~Benchmarker()
 {
-    for (int i = 0; i < problems.size(); i++)
+    for (unsigned int i = 0; i < problems.size(); i++)
     {
         delete problems[i];
     }
@@ -129,7 +129,7 @@ void Benchmarker::submit()
     // put all data in json format
     nlohmann::json return_json;
 
-    for (int i = 0; i < problems.size(); i++)
+    for (unsigned int i = 0; i < problems.size(); i++)
     {
         problems[i]->print();
         if (problems[i]->solved)

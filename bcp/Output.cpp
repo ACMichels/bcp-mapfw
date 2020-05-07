@@ -156,7 +156,7 @@ SCIP_RETCODE save_best_solution(
     SCIP_Real obj = 0;
     if (!sol)
     {
-        problem->solution->solved = false;
+        problem->solved = false;
         return SCIP_OKAY;
     }
 
@@ -164,7 +164,7 @@ SCIP_RETCODE save_best_solution(
     obj = SCIPgetSolOrigObj(scip, sol);
     if (obj >= ARTIFICIAL_VAR_COST)
     {
-        problem->solution->solved = false;
+        problem->solved = false;
         return SCIP_OKAY;
     }
 
@@ -186,7 +186,7 @@ SCIP_RETCODE save_best_solution(
         // Check
         if (SCIPisPositive(scip, var_val))
         {
-            problem->solution->solved = false;
+            problem->solved = false;
             return SCIP_OKAY;
         }
     }
@@ -218,7 +218,7 @@ SCIP_RETCODE save_best_solution(
                 // Write.
                 problem->solution->costs.push_back(SCIPround(scip, SCIPvarGetObj(var)));
                 const auto& map = SCIPprobdataGetMap(probdata);
-                for (Time t = 0; t < path_length - 1; ++t)
+                for (Time t = 0; t < path_length; ++t)
                 {
                     auto [x, y] = map.get_xy(path[t].n);
                     problem->solution->paths[a].push_back(Problem::coord(--x, --y));
@@ -234,5 +234,6 @@ SCIP_RETCODE save_best_solution(
     }
 
     // Done.
+    problem->solved = true;
     return SCIP_OKAY;
 }

@@ -36,26 +36,26 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 
 Benchmarker::Benchmarker()
 {
-
-}
-
-Benchmarker::~Benchmarker()
-{
-
-}
-
-void Benchmarker::load(std::vector<int> problem_id)
-{
+    // Load API key
     std::string API_key_file_location = "/home/andor/Documents/BCP-MAFPW/bcp-mapfw/credentials.txt";
     std::ifstream API_key_file;
     API_key_file.open(API_key_file_location, std::ios::in);
     release_assert(API_key_file.good(), "Invalid credentials file {}", API_key_file_location);
 
     // Read credentials.
-    char API_key[32];
     API_key_file.getline(API_key, 32);
+}
 
+Benchmarker::~Benchmarker()
+{
+    for (int i = 0; i < problems.size(); i++)
+    {
+        delete problems[i];
+    }
+}
 
+void Benchmarker::load(std::vector<int> problem_id, bool debug)
+{
     struct MemoryStruct chunk;
     chunk.memory = (char*) malloc(1);  /* will be grown as needed by the realloc above */
     chunk.size = 0;    /* no data at this point */
@@ -83,7 +83,8 @@ void Benchmarker::load(std::vector<int> problem_id)
            data. */
         curl_easy_setopt(curl, CURLOPT_URL, fmt::format("https://mapfw.nl/api/benchmarks/{}/problems", problem_id[0]).c_str());
         /* Now specify the POST data */
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "{\"algorithm\" : \"BCP\", \"version\": \"0.1\", \"debug\": true}");
+        std::string opts = fmt::format("{{\"algorithm\" : \"BCP\", \"version\": \"0.1\", \"debug\": {} }}", (debug?"true":"false"));
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, opts.c_str());
 
         /* send all data to this function  */
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
@@ -103,7 +104,6 @@ void Benchmarker::load(std::vector<int> problem_id)
             for (nlohmann::json json_problem : json_data["problems"])
             {
                 problems.push_back(new Problem(json_problem));
-//                    std::cout << json_problem << "\n";
             }
         }
 
@@ -126,5 +126,69 @@ void Benchmarker::load(std::vector<int> problem_id)
 
 void Benchmarker::submit()
 {
+    // put all data in json format
+    nlohmann::json return_json;
 
+    for (int i = 0; i < problems.size(); i++)
+    {
+        problems[i]->print();
+        if (problems[i]->solved)
+        {
+            nlohmann::json j;
+            problems[i]->to_json(j);
+            return_json["solutions"].push_back(j);
+        }
+    }
+
+
+    // Send data
+    struct MemoryStruct chunk;
+    chunk.memory = (char*) malloc(1);  /* will be grown as needed by the realloc above */
+    chunk.size = 0;    /* no data at this point */
+
+    CURL *curl;
+    CURLcode res;
+
+    /* In windows, this will init the winsock stuff */
+    curl_global_init(CURL_GLOBAL_ALL);
+
+    /* get a curl handle */
+    curl = curl_easy_init();
+    if(curl) {
+
+        // Setup header
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, fmt::format("X-API-Token:{}", API_key).c_str());
+        headers = curl_slist_append(headers, "Accept: application/json");
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "charset: utf-8");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        /* First set the URL that is about to receive our POST. This URL can
+           just as well be a https:// URL if that is what should receive the
+           data. */
+        curl_easy_setopt(curl, CURLOPT_URL, fmt::format("https://mapfw.nl/api/attempts/{}/solutions", benchmark_id).c_str());
+        /* Now specify the POST data */
+        std::string return_string = return_json.dump();
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, return_string.c_str());
+
+        /* send all data to this function  */
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+        /* we pass our 'chunk' struct to the callback function */
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+
+        /* Perform the request, res will get the return code */
+        res = curl_easy_perform(curl);
+        /* Check for errors */
+        if(res != CURLE_OK){
+            err("curl_easy_perform() failed: {}\n", curl_easy_strerror(res));
+        } else {
+            fmt::print("Successfully sent with returncode");
+        }
+
+        /* always cleanup */
+        curl_easy_cleanup(curl); // Also deletes API_token
+        delete headers;
+
+    }
 }

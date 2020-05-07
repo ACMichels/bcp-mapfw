@@ -14,6 +14,9 @@
 
 class Benchmarker
 {
+private:
+    char API_key[32];
+
 public:
     int benchmark_id;
     std::vector<Problem*> problems;
@@ -22,7 +25,7 @@ public:
     Benchmarker();
     ~Benchmarker();
 
-    void load(std::vector<int> problem_id);
+    void load(std::vector<int> problem_id, bool debug);
 
     void submit();
 

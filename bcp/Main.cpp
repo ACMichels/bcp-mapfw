@@ -105,7 +105,6 @@ static SCIP_RETCODE cleanup_solver(SCIP* scip)
 
 static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, Agent agents_limit)
 {
-    std::cout << "SHOULD NOT GO HERE!!!\n";
     // Initialize SCIP.
     SCIP* scip = nullptr;
     SCIP_CALL(setup_solver(&scip));
@@ -141,17 +140,19 @@ static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, 
 
 }
 
-static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real time_limit, Agent agents_limit)
+static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real time_limit, Agent agents_limit, bool debug)
 {
     Benchmarker bm;
 
-    bm.load(instance_index);
-    std::cout << bm.problems.size();
+    bm.load(instance_index, debug);
 
     for (int i = 0; i < bm.problems.size(); i++)
     {
         Problem* problem = bm.problems[i];
-        std::cout << problem->start_coords[1].x << "\n";
+
+        // Start benchmark clock
+        problem->start_clock();
+
         // Initialize SCIP.
         SCIP* scip = nullptr;
         SCIP_CALL(setup_solver(&scip));
@@ -169,20 +170,25 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
 
         // Output.
         {
-            // Print.
-            println("");
-            SCIP_CALL(SCIPprintStatistics(scip, NULL));
-
-            // Write best solution to file.
-            SCIP_CALL(write_best_solution(scip));
+//            // Print.
+//            println("");
+//            SCIP_CALL(SCIPprintStatistics(scip, NULL));
+//
+//            // Write best solution to file.
+//            SCIP_CALL(write_best_solution(scip));
 
             // Save best solution to problem
             SCIP_CALL(save_best_solution(scip, problem));
+
+            // Stop benchmark clock
+            problem->stop_clock();
         }
 
         // Clean up
         SCIP_CALL(cleanup_solver(scip));
     }
+
+    bm.submit();
 
 
 
@@ -201,6 +207,7 @@ SCIP_RETCODE start_solver(
     std::vector<int> instance_index;
     bool index_mode = false;
     SCIP_Real time_limit = 0;
+    bool debug = false;
     Agent agents_limit = std::numeric_limits<Agent>::max();
     try
     {
@@ -215,6 +222,7 @@ SCIP_RETCODE start_solver(
             ("i,index", "Index on instance in database", cxxopts::value<Vector<int>>())
             ("t,time-limit", "Time limit in seconds", cxxopts::value<SCIP_Real>())
             ("a,agents-limit", "Read first N agents only", cxxopts::value<int>())
+            ("d,debug", "Run in debug mode")
         ;
         options.parse_positional({"file"});
 
@@ -240,6 +248,12 @@ SCIP_RETCODE start_solver(
         {
             index_mode = true;
             instance_index = result["index"].as<Vector<int>>();
+        }
+
+        // Get debug.
+        if (result.count("debug"))
+        {
+            debug = true;
         }
 
         // Get time limit.
@@ -297,7 +311,7 @@ SCIP_RETCODE start_solver(
 
     if (index_mode)
     {
-        SCIP_CALL(run_index_solver(instance_index, time_limit, agents_limit));
+        SCIP_CALL(run_index_solver(instance_index, time_limit, agents_limit, debug));
     }
 
     // Done.

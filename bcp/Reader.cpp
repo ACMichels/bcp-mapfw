@@ -78,8 +78,6 @@ SCIP_RETCODE read_instance(
     // Create pricing solver.
     auto astar = std::make_shared<AStar>(instance->map);
 
-    instance->map.print();
-
 
     // Create the problem.
     SCIP_CALL(SCIPprobdataCreate(scip, std::to_string(problem->id).c_str(), instance, astar));

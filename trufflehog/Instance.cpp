@@ -143,17 +143,9 @@ void read_map(const Problem* problem, Map& map)
         for (int j = 0; j < problem->width; j++)
         {
             if (problem->grid[problem->width*i+j])
-            {
                 map.set_passable(n);
-                std::cout << ".";
-            }
-            else
-            {
-                std::cout << "@";
-            }
             n++;
         }
-        std::cout << "\n";
         n += 2;
     }
 

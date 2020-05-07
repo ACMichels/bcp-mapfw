@@ -68,7 +68,7 @@ SCIP_RETCODE read_instance(
 
 SCIP_RETCODE read_instance(
     SCIP* scip,                   // SCIP
-    Problem& problem               // Problem of scenario
+    Problem* problem               // Problem of scenario
 )
 {
 
@@ -82,7 +82,7 @@ SCIP_RETCODE read_instance(
 
 
     // Create the problem.
-    SCIP_CALL(SCIPprobdataCreate(scip, std::to_string(problem.id).c_str(), instance, astar));
+    SCIP_CALL(SCIPprobdataCreate(scip, std::to_string(problem->id).c_str(), instance, astar));
 
     // Done.
     return SCIP_OKAY;

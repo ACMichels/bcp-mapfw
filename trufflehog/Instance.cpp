@@ -128,21 +128,21 @@ void read_map(const char* const map_path, Map& map)
     map_file.close();
 }
 
-void read_map(const Problem& problem, Map& map)
+void read_map(const Problem* problem, Map& map)
 {
-    int width = problem.width+2;
-    int height = problem.height+2;
+    int width = problem->width+2;
+    int height = problem->height+2;
 
     // Create map.
     map.resize(width, height);
 
     // Read grid.
     Node n = width + 1; // Start reading into the second row, second column of the grid
-    for (int i = 0; i < problem.height; i++)
+    for (int i = 0; i < problem->height; i++)
     {
-        for (int j = 0; j < problem.width; j++)
+        for (int j = 0; j < problem->width; j++)
         {
-            if (problem.grid[problem.width*i+j])
+            if (problem->grid[problem->width*i+j])
             {
                 map.set_passable(n);
                 std::cout << ".";
@@ -261,7 +261,7 @@ Instance::Instance(const char* scenario_path, const Agent nb_agents)
     }
 }
 
-Instance::Instance(const Problem& problem)
+Instance::Instance(const Problem* problem)
 {
     // Read map.
     read_map(problem, map);
@@ -274,13 +274,13 @@ Instance::Instance(const Problem& problem)
             Position start_y;
             Position goal_x;
             Position goal_y;
-            for (int i = 0; i < problem.agent_n; i++)
+            for (int i = 0; i < problem->agent_n; i++)
             {
                 // Initially fill values
-                start_x = problem.start_coords[i].x;
-                start_y = problem.start_coords[i].y;
-                goal_x = problem.goal_coords[i].x;
-                goal_y = problem.goal_coords[i].y;
+                start_x = problem->start_coords[i].x;
+                start_y = problem->start_coords[i].y;
+                goal_x = problem->goal_coords[i].x;
+                goal_y = problem->goal_coords[i].y;
 
                 // Add padding.
                 start_x++;

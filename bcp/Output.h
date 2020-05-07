@@ -21,10 +21,17 @@ Author: Edward Lam <ed@ed-lam.com>
 #define MAPF_OUTPUT_H
 
 #include "scip/scip.h"
+#include "Problem.h"
 
 // Write best solution to file
 SCIP_RETCODE write_best_solution(
     SCIP* scip    // SCIP
+);
+
+// Save best solution to problem
+SCIP_RETCODE save_best_solution(
+    SCIP* scip,    // SCIP
+    Problem* problem
 );
 
 #endif

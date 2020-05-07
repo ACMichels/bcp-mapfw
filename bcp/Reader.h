@@ -32,7 +32,7 @@ SCIP_RETCODE read_instance(
 );
 SCIP_RETCODE read_instance(
     SCIP* scip,                   // SCIP
-    Problem& problem               // Problem of scenario
+    Problem* problem               // Problem of scenario
 );
 
 #endif

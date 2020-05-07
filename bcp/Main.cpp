@@ -150,8 +150,8 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
 
     for (int i = 0; i < bm.problems.size(); i++)
     {
-        Problem problem = *bm.problems[i];
-        std::cout << problem.start_coords[1].x << "\n";
+        Problem* problem = bm.problems[i];
+        std::cout << problem->start_coords[1].x << "\n";
         // Initialize SCIP.
         SCIP* scip = nullptr;
         SCIP_CALL(setup_solver(&scip));
@@ -175,6 +175,9 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
 
             // Write best solution to file.
             SCIP_CALL(write_best_solution(scip));
+
+            // Save best solution to problem
+            SCIP_CALL(save_best_solution(scip, problem));
         }
 
         // Clean up

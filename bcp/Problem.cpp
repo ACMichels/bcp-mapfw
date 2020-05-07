@@ -7,7 +7,6 @@
 
 Problem::Problem(const nlohmann::json& problem_json)
 {
-
     // Reformat json string in json
     std::string problem_data_string = problem_json["problem"].dump();
     problem_data_string.erase(std::remove(problem_data_string.begin(), problem_data_string.end(), '\\'), problem_data_string.end());
@@ -43,7 +42,16 @@ Problem::Problem(const nlohmann::json& problem_json)
     release_assert(goal_coords.size() == agent_n, "goal_coords does not have the right amount of coords ({} /= {})", goal_coords.size(), agent_n);
 }
 
+void Problem::create_solution()
+{
+    solution = new Solution();
+    solution->costs.reserve(agent_n);
+    solution->paths.reserve(agent_n);
+
+}
+
 Problem::~Problem()
 {
     delete[] grid;
+    delete solution;
 }

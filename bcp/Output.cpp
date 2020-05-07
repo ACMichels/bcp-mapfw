@@ -131,3 +131,108 @@ SCIP_RETCODE write_best_solution(
     // Done.
     return SCIP_OKAY;
 }
+
+SCIP_RETCODE save_best_solution(
+    SCIP* scip,         // SCIP
+    Problem* problem    // Problem to save solution to
+)
+{
+    // Check.
+    debug_assert(scip);
+
+    // Create solution
+    problem->create_solution();
+
+    // Get problem data.
+    auto probdata = SCIPgetProbData(scip);
+    const auto N = SCIPprobdataGetN(probdata);
+
+    // Get variables.
+    const auto& dummy_vars = SCIPprobdataGetDummyVars(probdata);
+    const auto& agent_vars = SCIPprobdataGetAgentVars(probdata);
+
+    // Get best solution.
+    auto sol = SCIPgetBestSol(scip);
+    SCIP_Real obj = 0;
+    if (!sol)
+    {
+        problem->solution->solved = false;
+        return SCIP_OKAY;
+    }
+
+    // Exit if no solution within objective limit is found.
+    obj = SCIPgetSolOrigObj(scip, sol);
+    if (obj >= ARTIFICIAL_VAR_COST)
+    {
+        problem->solution->solved = false;
+        return SCIP_OKAY;
+    }
+
+    // Print paths.
+    println("");
+    print_used_paths(scip, sol);
+
+    // Check if dummy variables are used.
+    for (Agent a = 0; a < N; ++a)
+    {
+        // Get the variable.
+        auto var = dummy_vars[a];
+        debug_assert(var);
+        debug_assert(!SCIPvarGetData(var));
+
+        // Get the variable value.
+        const auto var_val = SCIPgetSolVal(scip, sol, var);
+
+        // Check
+        if (SCIPisPositive(scip, var_val))
+        {
+            problem->solution->solved = false;
+            return SCIP_OKAY;
+        }
+    }
+
+    // Write objective value.
+    problem->solution->cost = SCIPround(scip, obj);
+
+    // Write paths.
+    for (Agent a = 0; a < N; ++a)
+    {
+        bool found = false;
+        for (auto var : agent_vars[a])
+        {
+            // Create path vector
+            problem->solution->paths.push_back(std::vector<Problem::coord>());
+
+            // Get the variable value.
+            debug_assert(var);
+            const auto var_val = SCIPgetSolVal(scip, sol, var);
+
+            // Write the path.
+            if (SCIPisPositive(scip, var_val))
+            {
+                // Get the path.
+                auto vardata = SCIPvarGetData(var);
+                const auto path_length = SCIPvardataGetPathLength(vardata);
+                const auto path = SCIPvardataGetPath(vardata);
+
+                // Write.
+                problem->solution->costs.push_back(SCIPround(scip, SCIPvarGetObj(var)));
+                const auto& map = SCIPprobdataGetMap(probdata);
+                for (Time t = 0; t < path_length - 1; ++t)
+                {
+                    auto [x, y] = map.get_xy(path[t].n);
+                    problem->solution->paths[a].push_back(Problem::coord(--x, --y));
+                }
+
+                // Move to next agent.
+                release_assert(!found, "Agent {} is using more than one path");
+                found = true;
+                break;
+            }
+        }
+        release_assert(found, "Agent {} has no path in the solution", a);
+    }
+
+    // Done.
+    return SCIP_OKAY;
+}

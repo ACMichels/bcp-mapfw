@@ -213,7 +213,7 @@ Instance::Instance(const char* scenario_path, const Agent nb_agents)
                 }
 
                 // Store.
-                agents.add_agent(start_x, start_y, goal_x, goal_y, map);
+                agents.add_agent(start_x, start_y, goal_x, goal_y, map, std::vector<Position>(), std::vector<Position>());
                 agents_map_data.push_back(agent_map_data);
             }
         }
@@ -233,7 +233,7 @@ Instance::Instance(const char* scenario_path, const Agent nb_agents)
     // Check.
     for (Agent a = 0; a < agents.size(); ++a)
     {
-        const auto [start_id, goal_id, start_x, start_y, goal_x, goal_y] = agents[a];
+        const auto [start_id, goal_id, start_x, start_y, goal_x, goal_y, waypoints, waypoints_x, waypoints_y] = agents[a];
         const auto [map_path, map_width2, map_height2] = agents_map_data[a];
 
         release_assert(map_path == agents_map_data[0].map_path,
@@ -268,11 +268,20 @@ Instance::Instance(const Problem* problem)
             Position goal_y;
             for (int i = 0; i < problem->agent_n; i++)
             {
+                std::vector<Position> waypoints_x;
+                std::vector<Position> waypoints_y;
+
                 // Initially fill values
                 start_x = problem->start_coords[i].x;
                 start_y = problem->start_coords[i].y;
                 goal_x = problem->goal_coords[i].x;
                 goal_y = problem->goal_coords[i].y;
+
+                for (int j = 0; j < problem->waypoints[i].size(); j++)
+                {
+                    waypoints_x.push_back(problem->waypoints[i][j].x+1);
+                    waypoints_y.push_back(problem->waypoints[i][j].y+1);
+                }
 
                 // Add padding.
                 start_x++;
@@ -281,7 +290,7 @@ Instance::Instance(const Problem* problem)
                 goal_y++;
 
                 // Store.
-                agents.add_agent(start_x, start_y, goal_x, goal_y, map);
+                agents.add_agent(start_x, start_y, goal_x, goal_y, map, waypoints_x, waypoints_y);
             }
         }
         if (agents.empty())

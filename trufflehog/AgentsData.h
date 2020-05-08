@@ -37,6 +37,9 @@ class AgentsData
         Position start_y;
         Position goal_x;
         Position goal_y;
+        std::vector<Node> waypoints;
+        std::vector<Position> waypoints_x;
+        std::vector<Position> waypoints_y;
     };
 
     Vector<AgentData> data;
@@ -70,12 +73,20 @@ class AgentsData
                           const Position start_y,
                           const Position goal_x,
                           const Position goal_y,
-                          const Map& map)
+                          const Map& map,
+                          const std::vector<Position> waypoints_x,
+                          const std::vector<Position> waypoints_y)
     {
+        std::vector<Node> wp;
+        for (int i = 0; i < waypoints_x.size(); i++)
+        {
+            wp.push_back(map.get_id(waypoints_x[i], waypoints_y[i]));
+        }
         data.push_back({map.get_id(start_x, start_y),
                         map.get_id(goal_x, goal_y),
                         start_x, start_y,
-                        goal_x, goal_y});
+                        goal_x, goal_y,
+                        wp, waypoints_x, waypoints_y});
     }
 };
 

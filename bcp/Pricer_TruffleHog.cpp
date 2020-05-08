@@ -273,6 +273,7 @@ SCIP_RETCODE run_trufflehog_pricer(
     const auto N = SCIPprobdataGetN(probdata);
     const auto& map = SCIPprobdataGetMap(probdata);
     const auto& agents = SCIPprobdataGetAgentsData(probdata);
+    println("{}", agents[0].waypoints[0]); // REMOVE
 
     // Get variables.
     auto& vars = SCIPprobdataGetVars(probdata);

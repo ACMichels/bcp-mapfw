@@ -27,6 +27,7 @@ namespace TruffleHog
 
 using Node = Int;
 using Time = Int;
+using WPpassed = Int;
 enum Direction: uint8_t
 {
     NORTH = 0,
@@ -62,14 +63,16 @@ union NodeTime
     {
         Node n;
         Time t;
+        WPpassed w;
     };
     uint64_t nt;
 
     NodeTime() noexcept = default;
     NodeTime(const uint64_t nt) noexcept : nt(nt) {}
-    explicit NodeTime(const Node n, const Time t) noexcept : n(n), t(t) {}
+    explicit NodeTime(const Node n, const Time t, const WPpassed w) noexcept : n(n), t(t), w(w) {}
+    explicit NodeTime(const Node n, const Time t) noexcept : n(n), t(t), w(0) {}
 };
-static_assert(sizeof(NodeTime) == 8);
+static_assert(sizeof(NodeTime) == 16); // For some reason this doesn work
 static_assert(std::is_trivial<NodeTime>::value);
 inline bool operator==(const NodeTime a, const NodeTime b)
 {

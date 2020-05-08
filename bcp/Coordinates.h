@@ -48,12 +48,13 @@ struct AgentNodeTime
     Agent a{-1};
     Node n{0};
     Time t{0};
+    WPpassed w{0};
 };
-static_assert(sizeof(AgentNodeTime) == 12);
+static_assert(sizeof(AgentNodeTime) == 16);
 static_assert(std::is_trivially_copyable<AgentNodeTime>::value);
 inline bool operator==(const AgentNodeTime a, const AgentNodeTime b)
 {
-    return a.a == b.a && a.n == b.n && a.t == b.t;
+    return a.a == b.a && a.n == b.n && a.t == b.t && a.w == b.w;
 }
 inline bool operator!=(const AgentNodeTime a, const AgentNodeTime b)
 {
@@ -87,6 +88,7 @@ struct hash<AgentNodeTime>
         auto x = std::hash<Agent>{}(ant.a);
         hash_combine(x, ant.n);
         hash_combine(x, ant.t);
+        hash_combine(x, ant.w);
         return x;
     }
 };
@@ -105,7 +107,7 @@ struct formatter<AgentNodeTime>
     template<typename FormatContext>
     inline auto format(const AgentNodeTime& ant, FormatContext& ctx)
     {
-        return format_to(ctx.begin(), "(a={},n={},t={})", ant.a, ant.n, ant.t);
+        return format_to(ctx.begin(), "(a={},n={},t={},w={})", ant.a, ant.n, ant.t, ant.w);
     }
 };
 

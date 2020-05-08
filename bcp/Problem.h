@@ -34,6 +34,7 @@ public:
     bool solved = false;
     std::vector<coord> start_coords;
     std::vector<coord> goal_coords;
+    std::vector<std::vector<coord>> waypoints;
     Solution* solution;
     std::chrono::time_point<std::chrono::high_resolution_clock> start;
     std::chrono::duration<long int, std::ratio<1, 1000>> elapsed;

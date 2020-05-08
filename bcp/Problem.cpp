@@ -29,11 +29,17 @@ Problem::Problem(const nlohmann::json& problem_json)
         }
     }
 
-    // Read start and end locations
+    // Read start and end locations and waypointsgit stat
     for (int i = 0; i < agent_n; i++)
     {
         start_coords.push_back(coord(problem_data_json["starts"][i][0], problem_data_json["starts"][i][1]));
         goal_coords.push_back(coord(problem_data_json["goals"][i][0], problem_data_json["goals"][i][1]));
+        waypoints.push_back(std::vector<coord>());
+        for (int j = 0; j < problem_data_json["waypoints"][i].size(); j++)
+        {
+            waypoints[i].push_back(coord(problem_data_json["waypoints"][i][j][0], problem_data_json["waypoints"][i][j][1]));
+        }
+
     }
 
     // Check

@@ -42,7 +42,7 @@ SCIP_RETCODE SCIPprobdataAddPricedVar(
     SCIP_ProbData* probdata,    // Problem data
     const Agent a,              // Agent
     const Time path_length,     // Path length
-    const Edge* const path,     // Path
+    const EdgeWaypoint* const path,     // Path
     SCIP_VAR** var              // Output new variable
 );
 
@@ -169,7 +169,7 @@ AStar& SCIPprobdataGetAStar(
 String format_path(
     SCIP_ProbData* probdata,    // Problem data
     const Time path_length,     // Path length
-    const Edge* const path      // Path
+    const EdgeWaypoint* const path      // Path
 );
 
 // Format path

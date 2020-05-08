@@ -64,7 +64,7 @@ SCIP_RETCODE vertex_conflicts_add_var(
     SCIP_CONS* cons,           // Vertex conflicts constraint
     SCIP_VAR* var,             // Variable
     const Time path_length,    // Path length
-    const Edge* const path     // Path
+    const EdgeWaypoint* const path     // Path
 );
 
 const Vector<VertexConflict>& vertex_conflicts_get_constraints(

@@ -241,7 +241,7 @@ SCIP_RETCODE goal_conflicts_separate(
         for (const auto conflict_time : finish_times[a1])
         {
             // Make the node-time of the conflict.
-            const NodeTime nt{conflict_node, conflict_time};
+            const NodeTime nt{conflict_node, conflict_time, 333};
 
             // Sum paths belonging to the agent of the conflicting goal.
             SCIP_Real lhs1 = 0.0;
@@ -457,7 +457,7 @@ SCIP_RETCODE goal_conflicts_add_var(
     SCIP_VAR* var,              // Variable
     const Agent a,              // Agent
     const Time path_length,     // Path length
-    const Edge* const path      // Path
+    const EdgeWaypoint* const path      // Path
 )
 {
     // Get separator data.

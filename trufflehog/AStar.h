@@ -52,7 +52,8 @@ class AStar
             struct
             {
                 Node n : 32;
-                Time t : 31;
+                Time t : 20;
+                WPpassed : 12;
             };
         };
         Int pqueue_index;

@@ -273,7 +273,6 @@ SCIP_RETCODE run_trufflehog_pricer(
     const auto N = SCIPprobdataGetN(probdata);
     const auto& map = SCIPprobdataGetMap(probdata);
     const auto& agents = SCIPprobdataGetAgentsData(probdata);
-    println("{}", agents[0].waypoints[0]); // REMOVE
 
     // Get variables.
     auto& vars = SCIPprobdataGetVars(probdata);
@@ -516,7 +515,7 @@ SCIP_RETCODE run_trufflehog_pricer(
         const auto start = agents[a].start;
         const auto goal = agents[a].goal;
         SCIP_Real path_cost = 0.0;
-        Vector<Edge> path;
+        Vector<EdgeWaypoint> path;
 
         // Clear previous run.
         auto& time_finish_penalties = astar.time_finish_penalties();
@@ -545,20 +544,20 @@ SCIP_RETCODE run_trufflehog_pricer(
                     Time t = 0;
                     {
                         const auto n = path[t].n;
-                        restab.reserve(NodeTime{n, t});
-                        restab.reserve(NodeTime{n, t + 1});
+                        restab.reserve(NodeTime{n, t, 222});
+                        restab.reserve(NodeTime{n, t + 1, 222});
                     }
                     for (t = 1; t < path_length; ++t)
                     {
                         const auto n = path[t].n;
-                        restab.reserve(NodeTime{n, t - 1});
-                        restab.reserve(NodeTime{n, t});
-                        restab.reserve(NodeTime{n, t + 1});
+                        restab.reserve(NodeTime{n, t - 1, 222});
+                        restab.reserve(NodeTime{n, t, 222});
+                        restab.reserve(NodeTime{n, t + 1, 222});
                     }
                     const auto n = path[path_length - 1].n;
                     for (++t; t < makespan; ++t)
                     {
-                        restab.reserve(NodeTime{n, t});
+                        restab.reserve(NodeTime{n, t, 222});
                     }
                 }
             }
@@ -578,20 +577,20 @@ SCIP_RETCODE run_trufflehog_pricer(
                 Time t = 0;
                 {
                     const auto n = path[t].n;
-                    restab.reserve(NodeTime{n, t});
-                    restab.reserve(NodeTime{n, t + 1});
+                    restab.reserve(NodeTime{n, t, 222});
+                    restab.reserve(NodeTime{n, t + 1, 222});
                 }
                 for (t = 1; t < path_length; ++t)
                 {
                     const auto n = path[t].n;
-                    restab.reserve(NodeTime{n, t - 1});
-                    restab.reserve(NodeTime{n, t});
-                    restab.reserve(NodeTime{n, t + 1});
+                    restab.reserve(NodeTime{n, t - 1, 222});
+                    restab.reserve(NodeTime{n, t, 222});
+                    restab.reserve(NodeTime{n, t + 1, 222});
                 }
                 const auto n = path[path_length - 1].n;
                 for (++t; t < makespan; ++t)
                 {
-                    restab.reserve(NodeTime{n, t});
+                    restab.reserve(NodeTime{n, t, 222});
                 }
             }
         }
@@ -653,7 +652,7 @@ SCIP_RETCODE run_trufflehog_pricer(
 
         // Modify edge costs for vertex branching decisions.
         Vector<NodeTime> segments;
-        segments.push_back(NodeTime{start, 0});
+        segments.push_back(NodeTime{start, 0, 222});
         for (Int c = 0; c < n_vertex_branching_conss; ++c)
         {
             // Get the constraint.
@@ -900,6 +899,8 @@ SCIP_RETCODE run_trufflehog_pricer(
             }
 #endif
 
+            println("!!!{} - {}!!!", segment_start.w, segment_goal.w); // REMOVE
+
             // Solve.
             const auto max_cost = agent_part_dual[a] - path_cost;
             const auto [segment, segment_cost] = astar.solve<is_farkas>(segment_start,
@@ -919,7 +920,7 @@ SCIP_RETCODE run_trufflehog_pricer(
             for (auto it = segment.begin(); it != segment.end() - 1; ++it)
             {
                 const auto d = get_direction(*it, *(it + 1), map);
-                path.push_back(Edge{it->n, d});
+                path.push_back(EdgeWaypoint{it->n, d, it->w});
             }
         }
 
@@ -1011,7 +1012,7 @@ SCIP_RETCODE run_trufflehog_pricer(
                 const auto d = it != segment.end() - 1 ?
                                get_direction(*it, *(it + 1), map) :
                                Direction::INVALID;
-                path.push_back(Edge{it->n, d});
+                path.push_back(EdgeWaypoint{it->n, d, it->w});
             }
         }
 

@@ -124,7 +124,7 @@ get_lp_branch_candidates(
             for (Time t = 1; t < path_length; ++t)
             {
                 // Store the candidate vertex.
-                const NodeTime nt{path[t].n, t};
+                const NodeTime nt{path[t].n, t, path[t].w};
                 auto& scores = candidates[nt].first;
                 auto it = std::find_if(scores.begin(),
                                        scores.end(),
@@ -682,7 +682,7 @@ Pair<AgentNodeTime, bool> find_decision_vertex(
                     // Find a candidate between the entry and exit times.
                     for (Time t = entry; t < std::min(exit, best_ant.t); ++t)
                     {
-                        const NodeTime nt{path[t].n, t};
+                        const NodeTime nt{path[t].n, t, path[t].w};
                         auto it = candidates.find(nt);
                         if (it != candidates.end())
                         {
@@ -697,7 +697,7 @@ Pair<AgentNodeTime, bool> find_decision_vertex(
                             {
                                 best_lhs = lhs;
                                 best_path_length = path_length;
-                                best_ant = {a, path[t].n, t};
+                                best_ant = {a, path[t].n, t, path[t].w};
                             }
                         }
                     }
@@ -731,7 +731,7 @@ Pair<AgentNodeTime, bool> find_decision_vertex(
                 best_nb_paths = nb_paths[a];
                 best_shortest_path_length = shortest_path_length;
                 best_val = val;
-                best_ant = {a, nt.n, nt.t};
+                best_ant = {a, nt.n, nt.t, nt.w};
             }
     if (best_ant.a >= 0)
     {
@@ -758,7 +758,7 @@ Pair<AgentNodeTime, bool> find_decision_vertex(
                 best_nb_paths = nb_paths[a];
                 best_shortest_path_length = shortest_path_length;
                 best_val = val;
-                best_ant = {a, nt.n, nt.t};
+                best_ant = {a, nt.n, nt.t, nt.w};
             }
     if (best_ant.a >= 0)
     {

@@ -151,7 +151,7 @@ SCIP_RETCODE twoedge_conflicts_separate(
                 for (Time t = 0; t < path_length - 1; ++t)
                     if (path[t].d != Direction::WAIT)
                     {
-                        const EdgeTime et{path[t], t};
+                        const EdgeTime et{path[t].getEdge(), t};
                         agent_edges_a[et] += var_val;
                     }
             }

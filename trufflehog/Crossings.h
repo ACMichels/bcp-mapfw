@@ -31,7 +31,7 @@ struct GoalCrossing
     Float dual;
     NodeTime nt;
 };
-static_assert(sizeof(GoalCrossing) == 8 + 16);
+static_assert(sizeof(GoalCrossing) == 8 + 8);
 #endif
 
 }

@@ -28,7 +28,7 @@ SCIP_RETCODE SCIPvardataCreate(
     SCIP* scip,                // SCIP
     const Agent a,             // Agent of the path
     const Time path_length,    // Length of the path
-    const Edge* const path,    // Edges in the path
+    const EdgeWaypoint* const path,    // Edges in the path
     SCIP_VARDATA** vardata     // Output variable data
 );
 
@@ -52,7 +52,7 @@ Time SCIPvardataGetPathLength(
 );
 
 // Get the edges in the path
-const Edge* SCIPvardataGetPath(
+const EdgeWaypoint* SCIPvardataGetPath(
     SCIP_VARDATA* vardata    // Variable data
 );
 

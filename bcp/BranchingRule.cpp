@@ -139,7 +139,7 @@ SCIP_RETCODE branch_on_vertex(
             // Get the decision.
             const auto a = SCIPgetVertexBranchingAgent(cons);
             const auto nt = SCIPgetVertexBranchingNodeTime(cons);
-            const AgentNodeTime decision{.a = a, .n = nt.n, .t = nt.t};
+            const AgentNodeTime decision{.a = a, .n = nt.n, .t = nt.t, .w = 222};
 
             // Check.
             release_assert(decision != ant);
@@ -178,7 +178,7 @@ SCIP_RETCODE branch_on_vertex(
 #endif
                                             VertexBranchDirection::Use,
                                             ant.a,
-                                            NodeTime(ant.n, ant.t),
+                                            NodeTime(ant.n, ant.t, ant.w),
                                             branch_1_node,
                                             TRUE));
     SCIP_CALL(SCIPcreateConsVertexBranching(scip,
@@ -190,7 +190,7 @@ SCIP_RETCODE branch_on_vertex(
 #endif
                                             VertexBranchDirection::Forbid,
                                             ant.a,
-                                            NodeTime(ant.n, ant.t),
+                                            NodeTime(ant.n, ant.t, ant.w),
                                             branch_0_node,
                                             TRUE));
 
@@ -406,7 +406,7 @@ SCIP_RETCODE branch_on_length(
 #endif
                                             LengthBranchDirection::GEq,
                                             ant.a,
-                                            NodeTime(ant.n, ant.t + 1),
+                                            NodeTime(ant.n, ant.t + 1, ant.w),
                                             branch_1_node,
                                             TRUE));
     SCIP_CALL(SCIPcreateConsLengthBranching(scip,
@@ -418,7 +418,7 @@ SCIP_RETCODE branch_on_length(
 #endif
                                             LengthBranchDirection::LEq,
                                             ant.a,
-                                            NodeTime(ant.n, ant.t),
+                                            NodeTime(ant.n, ant.t, ant.w),
                                             branch_0_node,
                                             TRUE));
 

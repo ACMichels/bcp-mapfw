@@ -214,7 +214,7 @@ void AStar::generate_start(const NodeTime start)
 void AStar::generate_end(Label* const current, const Cost max_cost)
 {
     // Compute node-time.
-    const NodeTime nt(-1, current->t);
+    const NodeTime nt(-1, current->t, 222);
 
     // Create label.
     auto new_label = reinterpret_cast<Label*>(label_pool_.get_label_buffer());
@@ -288,7 +288,7 @@ void AStar::generate(Label* const current,
 {
     // Compute node-time.
     const auto new_t = current->t + 1;
-    const NodeTime nt(node, new_t);
+    const NodeTime nt(node, new_t, 222);
 
     // Check if time-infeasible.
     const auto h_to_goal = (*h_)[nt.n];

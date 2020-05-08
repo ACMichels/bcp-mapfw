@@ -69,7 +69,7 @@ SCIP_RETCODE edge_conflicts_add_var(
     SCIP_CONS* cons,           // Edge conflicts constraint
     SCIP_VAR* var,             // Variable
     const Time path_length,    // Path length
-    const Edge* const path     // Path
+    const EdgeWaypoint* const path     // Path
 );
 
 const Vector<EdgeConflict>& edge_conflicts_get_constraints(

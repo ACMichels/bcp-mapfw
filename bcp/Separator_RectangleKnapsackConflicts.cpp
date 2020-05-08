@@ -403,14 +403,14 @@ SCIP_RETCODE rectangle_knapsack_conflicts_separate(
                 agent_paths_a.push_back(var);
 
                 {
-                    const EdgeTime et{path[0], 0};
+                    const EdgeTime et{path[0].getEdge(), 0};
                     agent_edges_a[et] += var_val;
                 }
 
                 for (Time t = 1; t < path_length; ++t)
                 {
                     {
-                        const NodeTime nt{path[t].n, t};
+                        const NodeTime nt{path[t].n, t, path[t].w};
                         if (std::find(agent_vertices_a.begin(),
                                       agent_vertices_a.end(),
                                       nt) == agent_vertices_a.end())
@@ -420,7 +420,7 @@ SCIP_RETCODE rectangle_knapsack_conflicts_separate(
                     }
 
                     {
-                        const EdgeTime et{path[t], t};
+                        const EdgeTime et{path[t].getEdge(), t};
                         agent_edges_a[et] += var_val;
                     }
                 }

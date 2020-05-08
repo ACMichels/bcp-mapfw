@@ -47,7 +47,7 @@ SCIP_RETCODE goal_conflicts_add_var(
     SCIP_VAR* var,             // Variable
     const Agent a,             // Agent
     const Time path_length,    // Path length
-    const Edge* const path     // Path
+    const EdgeWaypoint* const path     // Path
 );
 
 const Vector<GoalConflict>& goal_conflicts_get_constraints(

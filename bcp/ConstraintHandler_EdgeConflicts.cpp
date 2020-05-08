@@ -367,7 +367,7 @@ SCIP_RETCODE edge_conflicts_check(
             for (Time t = 0; t < path_length - 1; ++t)
                 if (path[t].d != Direction::WAIT)
                 {
-                    const auto e = get_undirected_edge(path[t], map);
+                    const auto e = get_undirected_edge(path[t].getEdge(), map);
                     const EdgeTime et(e, t);
                     edge_times_used[et] += var_val;
                 }
@@ -455,14 +455,14 @@ SCIP_RETCODE edge_conflicts_separate(
             {
                 if (path[t].d != Direction::WAIT)
                 {
-                    const auto e = get_undirected_edge(path[t], map);
+                    const auto e = get_undirected_edge(path[t].getEdge(), map);
                     const EdgeTime et(e, t);
                     edge_times_used[et] += var_val;
                 }
 #ifdef USE_WAITEDGE_CONFLICTS
                 else
                 {
-                    const auto e = path[t];
+                    const auto e = path[t].getEdge();
                     debug_assert(e.d == Direction::WAIT);
                     const EdgeTime et(e, t);
                     waits_used[et] += var_val;
@@ -966,7 +966,7 @@ SCIP_RETCODE edge_conflicts_add_var(
     SCIP_CONS* cons,            // Edge conflicts constraint
     SCIP_VAR* var,              // Variable
     const Time path_length,     // Path length
-    const Edge* const path      // Path
+    const EdgeWaypoint* const path      // Path
 )
 {
     // Get constraint data.

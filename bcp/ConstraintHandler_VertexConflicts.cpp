@@ -254,13 +254,13 @@ SCIP_RETCODE vertex_conflicts_check(
             Time t = 1;
             for (; t < path_length; ++t)
             {
-                const NodeTime nt{path[t].n, t};
+                const NodeTime nt{path[t].n, t, path[t].w};
                 vertex_times_used[nt] += var_val;
             }
             const auto n = path[path_length - 1].n;
             for (; t < makespan; ++t)
             {
-                const NodeTime nt{n, t};
+                const NodeTime nt{n, t, path[t].w};
                 vertex_times_used[nt] += var_val;
             }
         }
@@ -350,13 +350,13 @@ SCIP_RETCODE vertex_conflicts_separate(
             Time t = 1;
             for (; t < path_length; ++t)
             {
-                const NodeTime nt{path[t].n, t};
+                const NodeTime nt{path[t].n, t, path[t].w};
                 vertex_times_used[nt] += var_val;
             }
             const auto n = path[path_length - 1].n;
             for (; t < makespan; ++t)
             {
-                const NodeTime nt{n, t};
+                const NodeTime nt{n, t, 222};
                 vertex_times_used[nt] += var_val;
             }
         }
@@ -781,7 +781,7 @@ SCIP_RETCODE vertex_conflicts_add_var(
     SCIP_CONS* cons,            // Vertex conflicts constraint
     SCIP_VAR* var,              // Variable
     const Time path_length,     // Path length
-    const Edge* const path      // Path
+    const EdgeWaypoint* const path      // Path
 )
 {
     // Get constraint data.

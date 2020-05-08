@@ -165,7 +165,7 @@ SCIP_RETCODE waitdelay_conflicts_separate(
             {
                 for (Time t = 0; t < path_length - 1; ++t)
                 {
-                    const EdgeTime et{path[t], t};
+                    const EdgeTime et{path[t].getEdge(), t};
                     agent_edges_a[et] += var_val;
                 }
             }

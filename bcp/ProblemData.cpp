@@ -365,7 +365,7 @@ SCIP_RETCODE SCIPprobdataAddPricedVar(
     SCIP_ProbData* probdata,    // Problem data
     const Agent a,              // Agent
     const Time path_length,     // Path length
-    const Edge* const path,     // Path
+    const EdgeWaypoint* const path,     // Path
     SCIP_VAR** var              // Output new variable
 )
 {
@@ -1157,7 +1157,7 @@ AStar& SCIPprobdataGetAStar(
 String format_path(
     SCIP_ProbData* probdata,    // Problem data
     const Time path_length,     // Path length
-    const Edge* const path      // Path
+    const EdgeWaypoint* const path      // Path
 )
 {
     const auto& map = SCIPprobdataGetMap(probdata);
@@ -1300,13 +1300,13 @@ void print_used_paths(
                     Time t = 1;
                     for (; t < path_length; ++t)
                     {
-                        const NodeTime nt{path[t].n, t};
+                        const NodeTime nt{path[t].n, t, 222};
                         vertex_times_used[nt][a] += var_val;
                     }
                     const auto n = path[path_length - 1].n;
                     for (; t < makespan; ++t)
                     {
-                        const NodeTime nt{n, t};
+                        const NodeTime nt{n, t, 222};
                         vertex_times_used[nt][a] += var_val;
                     }
                 }
@@ -1315,7 +1315,7 @@ void print_used_paths(
                 {
                     for (Time t = 0; t < path_length - 1; ++t)
                     {
-                        const auto e = get_undirected_edge(path[t], map);
+                        const auto e = get_undirected_edge(path[t].getEdge(), map);
                         const EdgeTime et(e, t);
                         edge_times_used[et][a] += var_val;
                     }
@@ -1418,7 +1418,7 @@ void print_used_paths(
 #endif
 
                     fmt::terminal_color colour = fmt::terminal_color::black;
-                    if (auto it = vertex_times_used.find(NodeTime(e.n, t)); it != vertex_times_used.end())
+                    if (auto it = vertex_times_used.find(NodeTime(e.n, t, 222)); it != vertex_times_used.end())
                     {
                         const auto n = it->second.size();
                         if (n > 1)
@@ -1426,7 +1426,7 @@ void print_used_paths(
                             colour = fmt::terminal_color::blue;
                         }
                     }
-                    if (auto it = edge_times_used.find(EdgeTime(get_undirected_edge(path[t], map), t)); it != edge_times_used.end())
+                    if (auto it = edge_times_used.find(EdgeTime(get_undirected_edge(path[t].getEdge(), map), t)); it != edge_times_used.end())
                     {
                         const auto n = it->second.size();
                         if (n > 1)

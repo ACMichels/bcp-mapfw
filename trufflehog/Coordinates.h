@@ -57,26 +57,53 @@ inline bool operator!=(const Edge a, const Edge b)
     return !(a == b);
 }
 
+struct EdgeWaypoint
+{
+    Node n : 29;
+    Direction d : 3;
+    WPpassed w : 12;
+
+    EdgeWaypoint() noexcept = default;
+    EdgeWaypoint(const Node n, const Direction d, const WPpassed w) noexcept : n(n), d(d), w(w) {}
+    Edge getEdge() const {return Edge(n, d);}
+};
+static_assert(sizeof(EdgeWaypoint) == 8);
+static_assert(std::is_trivial<EdgeWaypoint>::value);
+inline bool operator==(const EdgeWaypoint a, const EdgeWaypoint b)
+{
+    return a.n == b.n && a.d == b.d/* && a.w == b.w*/;
+}
+inline bool operator!=(const EdgeWaypoint a, const EdgeWaypoint b)
+{
+    return !(a == b);
+}
+inline bool operator==(const EdgeWaypoint a, const Edge b)
+{
+    return a.n == b.n && a.d == b.d;
+}
+
 union NodeTime
 {
     struct
     {
-        Node n;
-        Time t;
-        WPpassed w;
+        Node n : 32;
+        Time t : 20;
+        WPpassed w : 12;
     };
     uint64_t nt;
 
     NodeTime() noexcept = default;
     NodeTime(const uint64_t nt) noexcept : nt(nt) {}
+//    NodeTime(const NodeTime& nt) noexcept = default;
     explicit NodeTime(const Node n, const Time t, const WPpassed w) noexcept : n(n), t(t), w(w) {}
-    explicit NodeTime(const Node n, const Time t) noexcept : n(n), t(t), w(0) {}
+    //explicit NodeTime(const Node n, const Time t) noexcept : n(n), t(t), w(0) {}
 };
-static_assert(sizeof(NodeTime) == 16); // For some reason this doesn work
+static_assert(sizeof(NodeTime) == 8);
 static_assert(std::is_trivial<NodeTime>::value);
 inline bool operator==(const NodeTime a, const NodeTime b)
 {
-    return a.nt == b.nt;
+    //return a.nt == b.nt;
+    return a.n == b.n && a.t == b.t;
 }
 inline bool operator!=(const NodeTime a, const NodeTime b)
 {
@@ -103,7 +130,7 @@ union EdgeTime
     explicit EdgeTime(const NodeTime nt, const Direction d) noexcept : n{nt.n}, d{d}, t{nt.t} {}
     explicit EdgeTime(const Node n, const Direction d, const Time t) noexcept : n{n}, d{d}, t{t} {}
 
-    inline NodeTime nt() const noexcept { return NodeTime{n, t}; }
+    inline NodeTime nt() const noexcept { return NodeTime{n, t, 222}; }
 };
 static_assert(sizeof(EdgeTime) == 8);
 static_assert(std::is_trivial<EdgeTime>::value);

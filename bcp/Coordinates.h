@@ -54,19 +54,19 @@ static_assert(sizeof(AgentNodeTime) == 16);
 static_assert(std::is_trivially_copyable<AgentNodeTime>::value);
 inline bool operator==(const AgentNodeTime a, const AgentNodeTime b)
 {
-    return a.a == b.a && a.n == b.n && a.t == b.t && a.w == b.w;
+    return a.a == b.a && a.n == b.n && a.t == b.t/* && a.w == b.w*/;
 }
 inline bool operator!=(const AgentNodeTime a, const AgentNodeTime b)
 {
     return !(a == b);
 }
 
-template<class T>
-inline void hash_combine(std::size_t& s, const T& v)
-{
-    std::hash<T> h;
-    s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
-}
+//template<class T>
+//inline void hash_combine(std::size_t& s, const T& v)
+//{
+//    std::hash<T> h;
+//    s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+//}
 
 namespace std
 {
@@ -88,7 +88,7 @@ struct hash<AgentNodeTime>
         auto x = std::hash<Agent>{}(ant.a);
         hash_combine(x, ant.n);
         hash_combine(x, ant.t);
-        hash_combine(x, ant.w);
+        //hash_combine(x, ant.w);
         return x;
     }
 };

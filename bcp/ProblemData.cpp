@@ -1300,13 +1300,13 @@ void print_used_paths(
                     Time t = 1;
                     for (; t < path_length; ++t)
                     {
-                        const NodeTime nt{path[t].n, t, 222};
+                        const NodeTime nt{path[t].n, t, path[t].w};
                         vertex_times_used[nt][a] += var_val;
                     }
                     const auto n = path[path_length - 1].n;
                     for (; t < makespan; ++t)
                     {
-                        const NodeTime nt{n, t, 222};
+                        const NodeTime nt{n, t, 999};
                         vertex_times_used[nt][a] += var_val;
                     }
                 }
@@ -1418,7 +1418,7 @@ void print_used_paths(
 #endif
 
                     fmt::terminal_color colour = fmt::terminal_color::black;
-                    if (auto it = vertex_times_used.find(NodeTime(e.n, t, 222)); it != vertex_times_used.end())
+                    if (auto it = vertex_times_used.find(NodeTime(e.n, t, 999)); it != vertex_times_used.end())
                     {
                         const auto n = it->second.size();
                         if (n > 1)

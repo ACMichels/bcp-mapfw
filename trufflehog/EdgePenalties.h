@@ -95,7 +95,7 @@ class EdgePenalties
     }
     inline EdgeCosts& get_edge_penalties(const Node n, const Time t)
     {
-        return get_edge_penalties(NodeTime(n, t, 222));
+        return get_edge_penalties(NodeTime(n, t, 999));
     }
 
     // Reset for next run

@@ -356,7 +356,7 @@ SCIP_RETCODE vertex_conflicts_separate(
             const auto n = path[path_length - 1].n;
             for (; t < makespan; ++t)
             {
-                const NodeTime nt{n, t, 222};
+                const NodeTime nt{n, t, 999};
                 vertex_times_used[nt] += var_val;
             }
         }

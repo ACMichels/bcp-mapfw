@@ -139,7 +139,7 @@ SCIP_RETCODE branch_on_vertex(
             // Get the decision.
             const auto a = SCIPgetVertexBranchingAgent(cons);
             const auto nt = SCIPgetVertexBranchingNodeTime(cons);
-            const AgentNodeTime decision{.a = a, .n = nt.n, .t = nt.t, .w = 222};
+            const AgentNodeTime decision{.a = a, .n = nt.n, .t = nt.t, .w = nt.w};
 
             // Check.
             release_assert(decision != ant);

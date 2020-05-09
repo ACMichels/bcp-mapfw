@@ -130,7 +130,7 @@ union EdgeTime
     explicit EdgeTime(const NodeTime nt, const Direction d) noexcept : n{nt.n}, d{d}, t{nt.t} {}
     explicit EdgeTime(const Node n, const Direction d, const Time t) noexcept : n{n}, d{d}, t{t} {}
 
-    inline NodeTime nt() const noexcept { return NodeTime{n, t, 222}; }
+    inline NodeTime nt() const noexcept { return NodeTime{n, t, 999}; }
 };
 static_assert(sizeof(EdgeTime) == 8);
 static_assert(std::is_trivial<EdgeTime>::value);
@@ -145,6 +145,13 @@ inline bool operator!=(const EdgeTime a, const EdgeTime b)
 
 }
 
+template<class T>
+inline void hash_combine(std::size_t& s, const T& v)
+{
+    std::hash<T> h;
+    s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
+}
+
 namespace std
 {
 
@@ -153,7 +160,10 @@ struct hash<TruffleHog::NodeTime>
 {
     inline std::size_t operator()(const TruffleHog::NodeTime nt) const noexcept
     {
-        return std::hash<uint64_t>{}(nt.nt);
+//        return std::hash<uint64_t>{}(nt.nt);
+        auto x = std::hash<TruffleHog::Node>{}(nt.n);
+        hash_combine(x, nt.t);
+        return x;
     }
 };
 

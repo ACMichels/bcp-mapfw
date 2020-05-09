@@ -544,20 +544,20 @@ SCIP_RETCODE run_trufflehog_pricer(
                     Time t = 0;
                     {
                         const auto n = path[t].n;
-                        restab.reserve(NodeTime{n, t, 222});
-                        restab.reserve(NodeTime{n, t + 1, 222});
+                        restab.reserve(NodeTime{n, t, 999});
+                        restab.reserve(NodeTime{n, t + 1, 999});
                     }
                     for (t = 1; t < path_length; ++t)
                     {
                         const auto n = path[t].n;
-                        restab.reserve(NodeTime{n, t - 1, 222});
-                        restab.reserve(NodeTime{n, t, 222});
-                        restab.reserve(NodeTime{n, t + 1, 222});
+                        restab.reserve(NodeTime{n, t - 1, 999});
+                        restab.reserve(NodeTime{n, t, 999});
+                        restab.reserve(NodeTime{n, t + 1, 999});
                     }
                     const auto n = path[path_length - 1].n;
                     for (++t; t < makespan; ++t)
                     {
-                        restab.reserve(NodeTime{n, t, 222});
+                        restab.reserve(NodeTime{n, t, 999});
                     }
                 }
             }
@@ -577,20 +577,20 @@ SCIP_RETCODE run_trufflehog_pricer(
                 Time t = 0;
                 {
                     const auto n = path[t].n;
-                    restab.reserve(NodeTime{n, t, 222});
-                    restab.reserve(NodeTime{n, t + 1, 222});
+                    restab.reserve(NodeTime{n, t, 999});
+                    restab.reserve(NodeTime{n, t + 1, 999});
                 }
                 for (t = 1; t < path_length; ++t)
                 {
                     const auto n = path[t].n;
-                    restab.reserve(NodeTime{n, t - 1, 222});
-                    restab.reserve(NodeTime{n, t, 222});
-                    restab.reserve(NodeTime{n, t + 1, 222});
+                    restab.reserve(NodeTime{n, t - 1, 999});
+                    restab.reserve(NodeTime{n, t, 999});
+                    restab.reserve(NodeTime{n, t + 1, 999});
                 }
                 const auto n = path[path_length - 1].n;
                 for (++t; t < makespan; ++t)
                 {
-                    restab.reserve(NodeTime{n, t, 222});
+                    restab.reserve(NodeTime{n, t, 999});
                 }
             }
         }
@@ -652,7 +652,7 @@ SCIP_RETCODE run_trufflehog_pricer(
 
         // Modify edge costs for vertex branching decisions.
         Vector<NodeTime> segments;
-        segments.push_back(NodeTime{start, 0, 222});
+        segments.push_back(NodeTime{start, 0, 777});
         for (Int c = 0; c < n_vertex_branching_conss; ++c)
         {
             // Get the constraint.

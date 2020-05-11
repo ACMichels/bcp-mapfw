@@ -139,7 +139,9 @@ class AStar
                                        const Node goal,
                                        const Time goal_earliest = 0,
                                        const Time goal_latest = std::numeric_limits<Time>::max(),
-                                       const Cost max_cost = std::numeric_limits<Cost>::infinity());
+                                       const Cost max_cost = std::numeric_limits<Cost>::infinity(),
+                                       const std::vector<Node> waypoints = std::vector<Node>(),
+                                       const WPpassed waypoints_to_visit = 0);
 
     // Debug
 #ifdef DEBUG
@@ -176,7 +178,9 @@ class AStar
                                                 const Node goal,
                                                 const Time goal_earliest = 0,
                                                 const Time goal_latest = std::numeric_limits<Time>::max(),
-                                                const Cost max_cost = std::numeric_limits<Cost>::infinity());
+                                                const Cost max_cost = std::numeric_limits<Cost>::infinity(),
+                                                const std::vector<Node> waypoints = std::vector<Node>(),
+                                                const WPpassed waypoints_to_visit = 0);
 };
 
 }

@@ -56,6 +56,11 @@ Benchmarker::~Benchmarker()
 
 void Benchmarker::load(std::vector<int> problem_id, bool debug)
 {
+//    nlohmann::json problem_jsonn = "{\"id\":3451,\"problem\":\"{\\\"grid\\\": [[1, 1, 1, 1, 1, 1, 1], [1, 0, 1, 1, 0, 0, 1], [1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]], \\\"width\\\": 7, \\\"height\\\": 5, \\\"starts\\\": [[5, 1], [1, 2], [2, 2]], \\\"goals\\\": [[4, 1], [5, 2], [1, 1]], \\\"waypoints\\\": [[[1, 3]], [], []]}\"}"_json;
+//
+//    problems.push_back(new Problem(problem_jsonn));
+//    return;
+
     struct MemoryStruct chunk;
     chunk.memory = (char*) malloc(1);  /* will be grown as needed by the realloc above */
     chunk.size = 0;    /* no data at this point */
@@ -83,7 +88,7 @@ void Benchmarker::load(std::vector<int> problem_id, bool debug)
            data. */
         curl_easy_setopt(curl, CURLOPT_URL, fmt::format("https://mapfw.nl/api/benchmarks/{}/problems", problem_id[0]).c_str());
         /* Now specify the POST data */
-        std::string opts = fmt::format("{{\"algorithm\" : \"BCP\", \"version\": \"heuristic-based waypoints\", \"debug\": {} }}", (debug?"true":"false"));
+        std::string opts = fmt::format("{{\"algorithm\" : \"BCP\", \"version\": \"single heuristic-based waypoint\", \"debug\": {} }}", (debug?"true":"false"));
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, opts.c_str());
 
         /* send all data to this function  */
@@ -139,7 +144,7 @@ void Benchmarker::submit()
             return_json["solutions"].push_back(j);
         }
     }
-
+//    return;
 
     // Send data
     struct MemoryStruct chunk;

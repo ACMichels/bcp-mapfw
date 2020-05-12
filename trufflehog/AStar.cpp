@@ -75,6 +75,21 @@ String make_goal_state_string(const std::byte* const state, const Int nb_goal_cr
 }
 #endif
 
+Vector<int> filterWaypoints(Vector<Node> waypoints, WPpassed toFilter)
+{
+    Vector<int> ind;
+
+    for (int i = 0; i < waypoints.size(); i++)
+    {
+        if (toFilter % 2)
+        {
+            ind.push_back(i);
+        }
+        toFilter >> 1;
+    }
+    return ind;
+}
+
 AStar::AStar(const Map& map)
     : map_(map),
       label_pool_(),
@@ -108,46 +123,46 @@ AStar::Label* AStar::dominated_without_resources(Label* const new_label)
 //#endif
 
     // Try to put in the new label.
-    auto [it, success] = frontier_without_resources_.emplace(
-        NodeTime{new_label->nt}, new_label);
-
-    // Check for dominance if a label already exists.
-    if (!success)
-    {
-        auto existing_label = it->second;
-        debug_assert(existing_label->nt == new_label->nt);
-        if (isLE(existing_label->f, new_label->f))
-        {
-            // Existing label dominates new label.
-            debug_assert(isLE(existing_label->g, new_label->g));
-
-            // Dominated.
-            return nullptr;
-        }
-        else
-        {
-            // New label dominates existing label.
-            debug_assert(it == frontier_without_resources_.find(new_label->nt));
-            debug_assert(!isLE(existing_label->g, new_label->g));
-
-            // If the existing label has already been popped, push the new label. Otherwise, replace
-            // the existing label with the new label.
-            if (existing_label->pqueue_index >= 0)
-            {
-                new_label->pqueue_index = existing_label->pqueue_index;
-                memcpy(existing_label, new_label, label_pool_.label_size());
-                open_.decrease_key(existing_label);
-            }
-            else
-            {
-                debug_assert(new_label->pqueue_index == -1);
-                memcpy(existing_label, new_label, label_pool_.label_size());
-                open_.push(existing_label);
-            }
-            return existing_label;
-        }
-    }
-    else
+//    auto [it, success] = frontier_without_resources_.emplace(
+//        NodeTimeWaypoint{new_label->nt}, new_label);
+//
+//    // Check for dominance if a label already exists.
+//    if (!success)
+//    {
+//        auto existing_label = it->second;
+//        debug_assert(existing_label->nt == new_label->nt);
+//        if (isLE(existing_label->f, new_label->f))
+//        {
+//            // Existing label dominates new label.
+//            debug_assert(isLE(existing_label->g, new_label->g));
+//
+//            // Dominated.
+//            return nullptr;
+//        }
+//        else
+//        {
+//            // New label dominates existing label.
+//            debug_assert(it == frontier_without_resources_.find(new_label->nt));
+//            debug_assert(!isLE(existing_label->g, new_label->g));
+//
+//            // If the existing label has already been popped, push the new label. Otherwise, replace
+//            // the existing label with the new label.
+//            if (existing_label->pqueue_index >= 0)
+//            {
+//                new_label->pqueue_index = existing_label->pqueue_index;
+//                memcpy(existing_label, new_label, label_pool_.label_size());
+//                open_.decrease_key(existing_label);
+//            }
+//            else
+//            {
+//                debug_assert(new_label->pqueue_index == -1);
+//                memcpy(existing_label, new_label, label_pool_.label_size());
+//                open_.push(existing_label);
+//            }
+//            return existing_label;
+//        }
+//    }
+//    else
     {
         // Store the label.
         label_pool_.take_label();
@@ -214,7 +229,7 @@ void AStar::generate_start(const NodeTime start)
 void AStar::generate_end(Label* const current, const Cost max_cost)
 {
     // Compute node-time.
-    const NodeTime nt(-1, current->t, 666);
+    const NodeTime nt(-1, current->t, 999);
 
     // Create label.
     auto new_label = reinterpret_cast<Label*>(label_pool_.get_label_buffer());
@@ -284,14 +299,47 @@ void AStar::generate(Label* const current,
                      const Node node,
                      const Cost cost,
                      const Time goal_latest,
-                     const Cost max_cost)
+                     const Cost max_cost,
+                     const Vector<Node> waypoints,
+                     const WPpassed goalPassed)
 {
     // Compute node-time.
     const auto new_t = current->t + 1;
-    const NodeTime nt(node, new_t, 0003);
+
+    WPpassed wpp = current->w;
+    auto it = find(waypoints.begin(), waypoints.end(), node);
+    if (it != waypoints.end())
+    {
+        wpp &= ~(1<<(it-waypoints.begin()));
+    }
+    const NodeTime nt(node, new_t, wpp);
+
+    // Compute h_to_goal
+    auto findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
+    IntCost h_to_goal;
+    switch(findeces.size())
+    {
+        case 0:
+        {
+            h_to_goal = (*h_)[nt.n];
+            break;
+        }
+        case 1:
+        {
+//            h_to_goal = (*h_)[nt.n];
+//            h_to_goal = (*h_waypoints_[0])[nt.n];
+//            h_to_goal = (*h_waypoints_[findeces[0]])[nt.n];
+            h_to_goal = (*h_)[waypoints[findeces[0]]] + (*h_waypoints_[findeces[0]])[nt.n];
+            break;
+        }
+        default:
+        {
+            h_to_goal = (*h_)[nt.n];
+        }
+    }
 
     // Check if time-infeasible.
-    const auto h_to_goal = (*h_)[nt.n];
+
     if (new_t + h_to_goal > goal_latest)
     {
         // Print.
@@ -427,7 +475,9 @@ void AStar::generate_neighbours(Label* const current,
                                 const Node goal,
                                 const Time goal_earliest,
                                 const Time goal_latest,
-                                const Cost max_cost)
+                                const Cost max_cost,
+                                const Vector<Node> waypoints,
+                                const WPpassed goalPassed)
 {
     // Print.
 #ifdef DEBUG
@@ -454,7 +504,8 @@ void AStar::generate_neighbours(Label* const current,
 #endif
 
     // Get edge costs.
-    const auto edge_costs = edge_penalties_.get_edge_costs<default_cost>(current->nt);
+//    const auto edge_costs = edge_penalties_.get_edge_costs<default_cost>(current->nt);
+    const auto edge_costs = edge_penalties_.get_edge_costs<default_cost>(NodeTime{current->n, current->t, 999});
 
     // Expand in five directions.
     const auto current_n = current->n;
@@ -470,7 +521,9 @@ void AStar::generate_neighbours(Label* const current,
                                     next_n,
                                     edge_costs.north,
                                     goal_latest,
-                                    max_cost);
+                                    max_cost,
+                                    waypoints,
+                                    goalPassed);
     }
     if (const auto next_n = map_.get_south(current_n);
         map_[next_n] && !std::isnan(edge_costs.south))
@@ -479,7 +532,9 @@ void AStar::generate_neighbours(Label* const current,
                                     next_n,
                                     edge_costs.south,
                                     goal_latest,
-                                    max_cost);
+                                    max_cost,
+                                    waypoints,
+                                    goalPassed);
     }
     if (const auto next_n = map_.get_east(current_n);
         map_[next_n] && !std::isnan(edge_costs.east))
@@ -488,7 +543,9 @@ void AStar::generate_neighbours(Label* const current,
                                     next_n,
                                     edge_costs.east,
                                     goal_latest,
-                                    max_cost);
+                                    max_cost,
+                                    waypoints,
+                                    goalPassed);
     }
     if (const auto next_n = map_.get_west(current_n);
         map_[next_n] && !std::isnan(edge_costs.west))
@@ -497,7 +554,9 @@ void AStar::generate_neighbours(Label* const current,
                                     next_n,
                                     edge_costs.west,
                                     goal_latest,
-                                    max_cost);
+                                    max_cost,
+                                    waypoints,
+                                    goalPassed);
     }
     if (const auto next_n = map_.get_wait(current_n);
         map_[next_n] && !std::isnan(edge_costs.wait))
@@ -506,11 +565,13 @@ void AStar::generate_neighbours(Label* const current,
                                     next_n,
                                     edge_costs.wait,
                                     goal_latest,
-                                    max_cost);
+                                    max_cost,
+                                    waypoints,
+                                    goalPassed);
     }
 
     // Expand to the end dummy node.
-    if (current_n == goal && current->t >= goal_earliest)
+    if (current_n == goal && current->t >= goal_earliest && (current->w & ~goalPassed) == 0)
     {
         generate_end(current, max_cost);
     }
@@ -520,13 +581,17 @@ void AStar::generate_neighbours<true, 0>(Label* const current,
                                          const Node goal,
                                          const Time goal_earliest,
                                          const Time goal_latest,
-                                         const Cost max_cost);
+                                         const Cost max_cost,
+                                         const Vector<Node> waypoints,
+                                         const WPpassed goalPassed);
 template
 void AStar::generate_neighbours<true, 1>(Label* const current,
                                          const Node goal,
                                          const Time goal_earliest,
                                          const Time goal_latest,
-                                         const Cost max_cost);
+                                         const Cost max_cost,
+                                         const Vector<Node> waypoints,
+                                         const WPpassed goalPassed);
 
 template<bool is_farkas>
 Pair<Vector<NodeTime>, Cost> AStar::solve(const NodeTime start,
@@ -563,7 +628,6 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
                                                    const std::vector<Node> waypoints,
                                                    const WPpassed waypoints_to_visit)
 {
-    //println("???{}, {}???", waypoints_to_visit, start.w); // REMOVE
 
     // Create output.
     Pair<Vector<NodeTime>, Cost> output;
@@ -573,6 +637,12 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
     // Get h values to the goal node. Compute them if necessary.
     debug_assert(heuristic_.max_path_length() >= 1);
     h_ = &heuristic_.compute_h(goal);
+
+    // Setup waypoints
+    for (int i = 0; i < waypoints.size(); i++)
+    {
+        h_waypoints_.push_back(&heuristic_.compute_h(waypoints[i]));
+    }
 
     // Calculate the default edge cost.
     constexpr IntCost default_cost = is_farkas ? 0 : 1;
@@ -653,7 +723,9 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
                                                                  goal,
                                                                  goal_earliest,
                                                                  goal_latest,
-                                                                 max_cost);
+                                                                 max_cost,
+                                                                 waypoints,
+                                                                 waypoints_to_visit);
         }
         else
         {

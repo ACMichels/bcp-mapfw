@@ -110,8 +110,8 @@ class EdgePenalties
         println("Edge penalties:");
         for (const auto& [nt, values] : edge_penalties_)
         {
-            println("   n: {}, t: {}, nt: {}, north: {}, south: {}, east: {}, west {}, wait {}",
-                    nt.n, nt.t, nt.nt,
+            println("   n: {}, t: {}, w: {}, nt: {}, north: {}, south: {}, east: {}, west {}, wait {}",
+                    nt.n, nt.t, nt.w, nt.nt,
                     values.north, values.south, values.east, values.west, values.wait);
         }
         println("");

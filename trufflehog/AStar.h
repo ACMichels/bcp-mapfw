@@ -53,7 +53,8 @@ class AStar
             {
                 Node n : 32;
                 Time t : 20;
-                WPpassed : 12;
+                WPpassed w : 11;
+                bool r : 1;
             };
         };
         Int pqueue_index;
@@ -86,6 +87,7 @@ class AStar
         }
     };
 
+
     // Instance
     const Map& map_;
 
@@ -104,8 +106,9 @@ class AStar
 
     // Temporary storage for each run
     PriorityQueue<Label, LabelCompare, false> open_;
-    HashTable<NodeTime, Label*> frontier_without_resources_;
+    HashTable<NodeTimeWaypoint, Label*> frontier_without_resources_;
     const Vector<IntCost>* h_;
+    Vector<const Vector<IntCost>*> h_waypoints_;
     Vector<Cost> time_finish_h_;
 
     // Label counter
@@ -137,11 +140,11 @@ class AStar
     template<bool is_farkas>
     Pair<Vector<NodeTime>, Cost> solve(const NodeTime start,
                                        const Node goal,
-                                       const Time goal_earliest = 0,
-                                       const Time goal_latest = std::numeric_limits<Time>::max(),
-                                       const Cost max_cost = std::numeric_limits<Cost>::infinity(),
-                                       const std::vector<Node> waypoints = std::vector<Node>(),
-                                       const WPpassed waypoints_to_visit = 0);
+                                       const Time goal_earliest,// = 0,
+                                       const Time goal_latest,// = std::numeric_limits<Time>::max(),
+                                       const Cost max_cost,// = std::numeric_limits<Cost>::infinity(),
+                                       const std::vector<Node> waypoints,// = std::vector<Node>(),
+                                       const WPpassed waypoints_to_visit);// = 0);
 
     // Debug
 #ifdef DEBUG
@@ -164,23 +167,27 @@ class AStar
                   const Node node,
                   const Cost cost,
                   const Time goal_latest,
-                  const Cost max_cost);
+                  const Cost max_cost,
+                  const Vector<Node> waypoints,
+                  const WPpassed goalPassed);
     template<bool without_resources, IntCost default_cost>
     void generate_neighbours(Label* const current,
                              const Node goal,
                              const Time goal_earliest,
                              const Time goal_latest,
-                             const Cost max_cost);
+                             const Cost max_cost,
+                             const Vector<Node> waypoints,
+                             const WPpassed goalPassed);
     template<bool without_resources, IntCost default_cost>
     void generate_goal_neighbours(const Label* const current);
     template<bool without_resources, bool is_farkas>
     Pair<Vector<NodeTime>, Cost> solve_internal(const NodeTime start,
                                                 const Node goal,
-                                                const Time goal_earliest = 0,
-                                                const Time goal_latest = std::numeric_limits<Time>::max(),
-                                                const Cost max_cost = std::numeric_limits<Cost>::infinity(),
-                                                const std::vector<Node> waypoints = std::vector<Node>(),
-                                                const WPpassed waypoints_to_visit = 0);
+                                                const Time goal_earliest,// = 0,
+                                                const Time goal_latest,// = std::numeric_limits<Time>::max(),
+                                                const Cost max_cost,// = std::numeric_limits<Cost>::infinity(),
+                                                const std::vector<Node> waypoints,// = std::vector<Node>(),
+                                                const WPpassed waypoints_to_visit);// = 0);
 };
 
 }

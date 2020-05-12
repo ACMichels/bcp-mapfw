@@ -7,6 +7,11 @@
 
 Problem::Problem(const nlohmann::json& problem_json)
 {
+    //DEBUG
+    //problem_json = "{\"id\":3451,\"problem\":\"{\\\"grid\\\": [[1, 1, 1, 1, 1, 1, 1], [1, 0, 1, 1, 0, 0, 1], [1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]], \\\"width\\\": 7, \\\"height\\\": 5, \\\"starts\\\": [[5, 1], [1, 2], [2, 2]], \\\"goals\\\": [[1, 3], [5, 2], [1, 1]], \\\"waypoints\\\": [[], [], []]}\"}"_json;
+//    problem_json = "{\"id\":3451,\"problem\":\"{\\\"grid\\\": [[1, 1, 1, 1, 1, 1, 1], [1, 0, 1, 1, 0, 0, 1], [1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]], \\\"width\\\": 7, \\\"height\\\": 5, \\\"starts\\\": [[5, 1], [1, 2], [2, 2]], \\\"goals\\\": [[4, 1], [5, 2], [1, 1]], \\\"waypoints\\\": [[1, 3], [], []]}\"}"_json;
+    //std::cout << problem_json.dump() << "\n";
+
     // Reformat json string in json
     std::string problem_data_string = problem_json["problem"].dump();
     problem_data_string.erase(std::remove(problem_data_string.begin(), problem_data_string.end(), '\\'), problem_data_string.end());

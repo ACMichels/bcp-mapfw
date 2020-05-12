@@ -653,7 +653,7 @@ SCIP_RETCODE run_trufflehog_pricer(
 
         // Modify edge costs for vertex branching decisions.
         Vector<NodeTime> segments;
-        segments.push_back(NodeTime{start, 0, 0});
+        segments.push_back(NodeTime{start, 0, (1 << waypoints.size()) - 1});
         for (Int c = 0; c < n_vertex_branching_conss; ++c)
         {
             // Get the constraint.
@@ -765,7 +765,7 @@ SCIP_RETCODE run_trufflehog_pricer(
 
         // Modify edge costs for length branching decisions.
         debug_assert(astar.max_path_length() >= 1);
-        Time latest_finish = astar.max_path_length() - 1;
+        Time latest_finish = (waypoints.size() + 1) * astar.max_path_length() - 1;
         for (Int c = 0; c < n_length_branching_conss; ++c)
         {
             // Get the constraint.
@@ -900,8 +900,6 @@ SCIP_RETCODE run_trufflehog_pricer(
             }
 #endif
 
-            //println("!!!{} - {}, {}!!!", segment_start.w, segment_goal.w, segment_goal.w & ~segment_start.w); // REMOVE
-
             // Solve.
             const auto max_cost = agent_part_dual[a] - path_cost;
             const auto [segment, segment_cost] = astar.solve<is_farkas>(segment_start,
@@ -910,7 +908,7 @@ SCIP_RETCODE run_trufflehog_pricer(
                                                                         segment_goal.t,
                                                                         max_cost,
                                                                         waypoints,
-                                                                        segment_goal.w & ~segment_start.w);
+                                                                        segment_start.w & ~segment_goal.w);
 
             // Advance to the next agent if no path is found.
             if (segment.empty())
@@ -997,12 +995,12 @@ SCIP_RETCODE run_trufflehog_pricer(
             // Solve.
             const auto max_cost = agent_part_dual[a] - path_cost;
             const auto [segment, segment_cost] = astar.solve<is_farkas>(segment_start,
-                                                                        goal,
+                                                                        goal,//waypoints.size() == 1 ? waypoints[0] : goal,
                                                                         earliest_finish,
                                                                         latest_finish,
                                                                         max_cost,
                                                                         waypoints,
-                                                                        ((1 << waypoints.size()) - 1) ^ segment_start.w);
+                                                                        0);
 
             // Advance to next agent if no path is found.
             if (segment.empty())

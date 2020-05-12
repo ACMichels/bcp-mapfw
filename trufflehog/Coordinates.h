@@ -61,7 +61,7 @@ struct EdgeWaypoint
 {
     Node n : 29;
     Direction d : 3;
-    WPpassed w : 12;
+    WPpassed w : 11;
 
     EdgeWaypoint() noexcept = default;
     EdgeWaypoint(const Node n, const Direction d, const WPpassed w) noexcept : n(n), d(d), w(w) {}
@@ -88,7 +88,7 @@ union NodeTime
     {
         Node n : 32;
         Time t : 20;
-        WPpassed w : 12;
+        WPpassed w : 11;
     };
     uint64_t nt;
 
@@ -103,9 +103,36 @@ static_assert(std::is_trivial<NodeTime>::value);
 inline bool operator==(const NodeTime a, const NodeTime b)
 {
     //return a.nt == b.nt;
-    return a.n == b.n && a.t == b.t;
+    return a.n == b.n && a.t == b.t /*&& a.w == b.w*/;
 }
 inline bool operator!=(const NodeTime a, const NodeTime b)
+{
+    return !(a == b);
+}
+
+union NodeTimeWaypoint
+{
+    struct
+    {
+        Node n : 32;
+        Time t : 20;
+        WPpassed w : 11;
+    };
+    uint64_t nt;
+
+    NodeTimeWaypoint() noexcept = default;
+    NodeTimeWaypoint(const uint64_t nt) noexcept : nt(nt) {}
+//    NodeTime(const NodeTime& nt) noexcept = default;
+    explicit NodeTimeWaypoint(const Node n, const Time t, const WPpassed w) noexcept : n(n), t(t), w(w) {}
+    //explicit NodeTime(const Node n, const Time t) noexcept : n(n), t(t), w(0) {}
+};
+static_assert(sizeof(NodeTimeWaypoint) == 8);
+static_assert(std::is_trivial<NodeTimeWaypoint>::value);
+inline bool operator==(const NodeTimeWaypoint a, const NodeTimeWaypoint b)
+{
+    return a.nt == b.nt;
+}
+inline bool operator!=(const NodeTimeWaypoint a, const NodeTimeWaypoint b)
 {
     return !(a == b);
 }
@@ -164,6 +191,15 @@ struct hash<TruffleHog::NodeTime>
         auto x = std::hash<TruffleHog::Node>{}(nt.n);
         hash_combine(x, nt.t);
         return x;
+    }
+};
+
+template<>
+struct hash<TruffleHog::NodeTimeWaypoint>
+{
+    inline std::size_t operator()(const TruffleHog::NodeTimeWaypoint nt) const noexcept
+    {
+        return std::hash<uint64_t>{}(nt.nt);
     }
 };
 

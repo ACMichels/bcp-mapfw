@@ -83,9 +83,10 @@ Vector<int> filterWaypoints(Vector<Node> waypoints, WPpassed toFilter)
     {
         if (toFilter % 2)
         {
+//            println("{}", toFilter); // REMOVE
             ind.push_back(i);
         }
-        toFilter >> 1;
+        toFilter = toFilter >> 1;
     }
     return ind;
 }
@@ -354,6 +355,10 @@ void AStar::generate(Label* const current,
             }
             h_to_goal = dist1;
 
+
+
+
+
 //            IntCost dist1 = 1e7;
 //            for (int i = 0; i < findeces.size(); i++)
 //            {
@@ -362,6 +367,53 @@ void AStar::generate(Label* const current,
 //                if (tmp_d1 < dist1)
 //                {
 //                    dist1 = tmp_d1;
+//                }
+//            }
+//            h_to_goal = dist1;
+
+
+
+
+//            Vector<IntCost> minDists;
+//            IntCost sumDists = 0;
+//            Vector<IntCost> goalDists;
+////            if ((wpp | goalPassed) != 7) println("{} {}", findeces.size(), wpp); // REMOVE
+//            // Calculate minimum distance between waypoints and to goal
+//            for (int i = 0; i < findeces.size(); i++)
+//            {
+//                IntCost tmp_min = 1e7;
+//                IntCost tmp_min_goal = 1e7;
+//                for (int j = 0; j < findeces.size(); j++)
+//                {
+//                    if (i != j)
+//                    {
+//                        // Min dist between waypints
+//                        const IntCost figgamejig = (*h_waypoints_[findeces[i]])[waypoints[findeces[j]]];
+//                        if (figgamejig < tmp_min)
+//                        {
+//                            tmp_min = figgamejig;
+//                        }
+//                        // Min dist to goal
+//                        const IntCost figgamejig2 = (*h_)[waypoints[findeces[j]]];
+//                        if (figgamejig2 < tmp_min_goal)
+//                        {
+//                            tmp_min_goal = figgamejig2;
+//                        }
+//                    }
+//                }
+//                minDists.push_back(tmp_min);
+//                goalDists.push_back(tmp_min_goal);
+//                sumDists += tmp_min;
+//            }
+//
+//            // Calculate min h
+//            IntCost dist1 = 1e7;
+//            for (int i = 0; i < findeces.size(); i++)
+//            {
+//                const IntCost tmp_h = (*h_)[nt.n] + sumDists - minDists[i] + goalDists[i];
+//                if (tmp_h < dist1)
+//                {
+//                    dist1 = tmp_h;
 //                }
 //            }
 //            h_to_goal = dist1;
@@ -667,6 +719,9 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
     // Get h values to the goal node. Compute them if necessary.
     debug_assert(heuristic_.max_path_length() >= 1);
     h_ = &heuristic_.compute_h(goal);
+
+    // Clear waypoints
+    h_waypoints_.clear();
 
     // Setup waypoints
     for (int i = 0; i < waypoints.size(); i++)

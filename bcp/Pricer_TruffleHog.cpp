@@ -900,6 +900,7 @@ SCIP_RETCODE run_trufflehog_pricer(
             }
 #endif
 
+            println("HHH"); // REMOVE
             // Solve.
             const auto max_cost = agent_part_dual[a] - path_cost;
             const auto [segment, segment_cost] = astar.solve<is_farkas>(segment_start,

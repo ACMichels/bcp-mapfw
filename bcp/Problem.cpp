@@ -40,7 +40,12 @@ Problem::Problem(const nlohmann::json& problem_json)
         start_coords.push_back(coord(problem_data_json["starts"][i][0], problem_data_json["starts"][i][1]));
         goal_coords.push_back(coord(problem_data_json["goals"][i][0], problem_data_json["goals"][i][1]));
         waypoints.push_back(std::vector<coord>());
-        for (int j = 0; j < problem_data_json["waypoints"][i].size(); j++)
+        int wpcount = problem_data_json["waypoints"][i].size();
+        if (wpcount > 11)
+        {
+            wpcount = 11;
+        }
+        for (int j = 0; j < wpcount; j++)
         {
             waypoints[i].push_back(coord(problem_data_json["waypoints"][i][j][0], problem_data_json["waypoints"][i][j][1]));
         }

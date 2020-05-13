@@ -112,57 +112,57 @@ AStar::AStar(const Map& map)
 AStar::Label* AStar::dominated_without_resources(Label* const new_label)
 {
     // Check.
-//#ifdef DEBUG
-//    for (auto it = frontier_without_resources_.begin();
-//         it != frontier_without_resources_.end();
-//         ++it)
-//    {
-//        auto label = it->second;
-//        open_.check_label(label);
-//    }
-//#endif
+#ifdef DEBUG
+    for (auto it = frontier_without_resources_.begin();
+         it != frontier_without_resources_.end();
+         ++it)
+    {
+        auto label = it->second;
+        open_.check_label(label);
+    }
+#endif
 
-    // Try to put in the new label.
-//    auto [it, success] = frontier_without_resources_.emplace(
-//        NodeTimeWaypoint{new_label->nt}, new_label);
-//
-//    // Check for dominance if a label already exists.
-//    if (!success)
-//    {
-//        auto existing_label = it->second;
-//        debug_assert(existing_label->nt == new_label->nt);
-//        if (isLE(existing_label->f, new_label->f))
-//        {
-//            // Existing label dominates new label.
-//            debug_assert(isLE(existing_label->g, new_label->g));
-//
-//            // Dominated.
-//            return nullptr;
-//        }
-//        else
-//        {
-//            // New label dominates existing label.
-//            debug_assert(it == frontier_without_resources_.find(new_label->nt));
-//            debug_assert(!isLE(existing_label->g, new_label->g));
-//
-//            // If the existing label has already been popped, push the new label. Otherwise, replace
-//            // the existing label with the new label.
-//            if (existing_label->pqueue_index >= 0)
-//            {
-//                new_label->pqueue_index = existing_label->pqueue_index;
-//                memcpy(existing_label, new_label, label_pool_.label_size());
-//                open_.decrease_key(existing_label);
-//            }
-//            else
-//            {
-//                debug_assert(new_label->pqueue_index == -1);
-//                memcpy(existing_label, new_label, label_pool_.label_size());
-//                open_.push(existing_label);
-//            }
-//            return existing_label;
-//        }
-//    }
-//    else
+    //Try to put in the new label.
+    auto [it, success] = frontier_without_resources_.emplace(
+        NodeTimeWaypoint{new_label->nt}, new_label);
+
+    // Check for dominance if a label already exists.
+    if (!success)
+    {
+        auto existing_label = it->second;
+        debug_assert(existing_label->nt == new_label->nt);
+        if (isLE(existing_label->f, new_label->f))
+        {
+            // Existing label dominates new label.
+            debug_assert(isLE(existing_label->g, new_label->g));
+
+            // Dominated.
+            return nullptr;
+        }
+        else
+        {
+            // New label dominates existing label.
+            debug_assert(it == frontier_without_resources_.find(new_label->nt));
+            debug_assert(!isLE(existing_label->g, new_label->g));
+
+            // If the existing label has already been popped, push the new label. Otherwise, replace
+            // the existing label with the new label.
+            if (existing_label->pqueue_index >= 0)
+            {
+                new_label->pqueue_index = existing_label->pqueue_index;
+                memcpy(existing_label, new_label, label_pool_.label_size());
+                open_.decrease_key(existing_label);
+            }
+            else
+            {
+                debug_assert(new_label->pqueue_index == -1);
+                memcpy(existing_label, new_label, label_pool_.label_size());
+                open_.push(existing_label);
+            }
+            return existing_label;
+        }
+    }
+    else
     {
         // Store the label.
         label_pool_.take_label();
@@ -326,15 +326,45 @@ void AStar::generate(Label* const current,
         }
         case 1:
         {
-//            h_to_goal = (*h_)[nt.n];
-//            h_to_goal = (*h_waypoints_[0])[nt.n];
-//            h_to_goal = (*h_waypoints_[findeces[0]])[nt.n];
             h_to_goal = (*h_)[waypoints[findeces[0]]] + (*h_waypoints_[findeces[0]])[nt.n];
             break;
         }
         default:
         {
-            h_to_goal = (*h_)[nt.n];
+            IntCost dist1 = 1e7;
+            for (int i = 0; i < findeces.size(); i++)
+            {
+                IntCost dist2 = 0;
+                for (int j = 0; j < findeces.size(); j++)
+                {
+                    if (i != j)
+                    {
+                        const IntCost tmp_d2 = (*h_waypoints_[findeces[j]])[waypoints[findeces[i]]] + (*h_)[waypoints[findeces[j]]] + (*h_waypoints_[findeces[i]])[nt.n];
+                        if (tmp_d2 > dist2)
+                        {
+                            dist2 = tmp_d2;
+                        }
+                    }
+                }
+//                const IntCost tmp_d1 = (*h_)[waypoints[findeces[i]]] + (*h_waypoints_[findeces[i]])[nt.n];
+                if (dist2 < dist1)
+                {
+                    dist1 = dist2;
+                }
+            }
+            h_to_goal = dist1;
+
+//            IntCost dist1 = 1e7;
+//            for (int i = 0; i < findeces.size(); i++)
+//            {
+//                const IntCost tmp_d1 = (*h_waypoints_[findeces[i]])[nt.n];
+////                const IntCost tmp_d1 = (*h_waypoints_[findeces[i]])[nt.n] + (*h_)[waypoints[findeces[i]]];
+//                if (tmp_d1 < dist1)
+//                {
+//                    dist1 = tmp_d1;
+//                }
+//            }
+//            h_to_goal = dist1;
         }
     }
 

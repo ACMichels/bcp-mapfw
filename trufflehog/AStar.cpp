@@ -83,7 +83,6 @@ Vector<int> filterWaypoints(Vector<Node> waypoints, WPpassed toFilter)
     {
         if (toFilter % 2)
         {
-//            println("{}", toFilter); // REMOVE
             ind.push_back(i);
         }
         toFilter = toFilter >> 1;
@@ -377,7 +376,6 @@ void AStar::generate(Label* const current,
 //            Vector<IntCost> minDists;
 //            IntCost sumDists = 0;
 //            Vector<IntCost> goalDists;
-////            if ((wpp | goalPassed) != 7) println("{} {}", findeces.size(), wpp); // REMOVE
 //            // Calculate minimum distance between waypoints and to goal
 //            for (int i = 0; i < findeces.size(); i++)
 //            {

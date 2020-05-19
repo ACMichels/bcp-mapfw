@@ -43,6 +43,7 @@ Problem::Problem(const nlohmann::json& problem_json)
         int wpcount = problem_data_json["waypoints"][i].size();
         if (wpcount > 11)
         {
+            err("To many waypoints: {}, set to 11.", wpcount);
             wpcount = 11;
         }
         for (int j = 0; j < wpcount; j++)

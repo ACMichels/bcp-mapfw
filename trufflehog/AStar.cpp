@@ -405,16 +405,20 @@ void AStar::generate(Label* const current,
 //            }
 //
 //            // Calculate min h
-//            IntCost dist1 = 1e7;
+////            IntCost dist1 = 1e7;
+//            dist1 = 1e7;
 //            for (int i = 0; i < findeces.size(); i++)
 //            {
-//                const IntCost tmp_h = (*h_)[nt.n] + sumDists - minDists[i] + goalDists[i];
+//                const IntCost tmp_h = (*h_waypoints_[findeces[i]])[nt.n] + sumDists - minDists[i] + goalDists[i];
+////                println("{} {} {} {} {}", tmp_h, (*h_waypoints_[findeces[i]])[nt.n], sumDists, minDists[i], goalDists[i]); // REMOVE
 //                if (tmp_h < dist1)
 //                {
 //                    dist1 = tmp_h;
 //                }
 //            }
-//            h_to_goal = dist1;
+////            println(""); // REMOVE
+////            h_to_goal = dist1;
+//            h_to_goal = (h_to_goal + dist1)/2;
         }
     }
 

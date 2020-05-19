@@ -908,7 +908,7 @@ SCIP_RETCODE run_trufflehog_pricer(
                                                                         segment_goal.t,
                                                                         max_cost,
                                                                         waypoints,
-                                                                        segment_start.w & ~segment_goal.w);
+                                                                        segment_goal.w); //segment_start.w & ~segment_goal.w);
 
             // Advance to the next agent if no path is found.
             if (segment.empty())

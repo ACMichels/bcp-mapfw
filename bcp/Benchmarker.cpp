@@ -9,6 +9,10 @@
 #include <vector>
 #include <Problem.h>
 
+const std::string _ALGORITHM = "BCP";
+const std::string _VERSION = "heuristic-based waypoints 64";
+
+
 struct MemoryStruct {
     char *memory;
     size_t size;
@@ -88,7 +92,7 @@ void Benchmarker::load(std::vector<int> problem_id, bool debug)
            data. */
         curl_easy_setopt(curl, CURLOPT_URL, fmt::format("https://mapfw.nl/api/benchmarks/{}/problems", problem_id[0]).c_str());
         /* Now specify the POST data */
-        std::string opts = fmt::format("{{\"algorithm\" : \"BCP\", \"version\": \"heuristic-based waypoints\", \"debug\": {} }}", (debug?"true":"false"));
+        std::string opts = fmt::format("{{\"algorithm\" : \"{}\", \"version\": \"{}\", \"debug\": {} }}", _ALGORITHM, _VERSION, (debug?"true":"false"));
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, opts.c_str());
 
         /* send all data to this function  */

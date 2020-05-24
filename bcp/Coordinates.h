@@ -50,7 +50,7 @@ struct AgentNodeTime
     Time t{0};
     WPpassed w{0};
 };
-static_assert(sizeof(AgentNodeTime) == 16);
+static_assert(sizeof(AgentNodeTime) == 24);
 static_assert(std::is_trivially_copyable<AgentNodeTime>::value);
 inline bool operator==(const AgentNodeTime a, const AgentNodeTime b)
 {

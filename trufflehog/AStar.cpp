@@ -124,7 +124,7 @@ AStar::Label* AStar::dominated_without_resources(Label* const new_label)
 
     //Try to put in the new label.
     auto [it, success] = frontier_without_resources_.emplace(
-        NodeTimeWaypoint{new_label->nt}, new_label);
+        NodeTimeWaypoint{new_label->nt, new_label->w}, new_label);
 
     // Check for dominance if a label already exists.
     if (!success)
@@ -193,6 +193,7 @@ void AStar::generate_start(const NodeTime start)
     const auto h = h_to_goal + h_to_finish;
     new_label->f = h;
     new_label->nt = start.nt;
+    new_label->w = start.w;
     new_label->pqueue_index = -1;
 #ifdef DEBUG
     new_label->label_id = nb_labels_++;
@@ -449,6 +450,7 @@ void AStar::generate(Label* const current,
     new_label->parent = current;
     new_label->g = current->g + cost;
     new_label->nt = nt.nt;
+    new_label->w = nt.w;
     new_label->reserved = reservation_table().is_reserved(nt);
 //    new_label->dominated = false;
     new_label->pqueue_index = -1;
@@ -825,7 +827,7 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
             // Store the path.
             for (auto l = parent; l; l = l->parent)
             {
-                path.push_back(l->nt);
+                path.push_back({l->nt, l->w});
             }
             std::reverse(path.begin(), path.end());
 

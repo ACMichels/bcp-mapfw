@@ -52,11 +52,11 @@ class AStar
             struct
             {
                 Node n : 32;
-                Time t : 20;
-                WPpassed w : 11;
+                Time t : 31;
                 bool r : 1;
             };
         };
+        WPpassed w;
         Int pqueue_index;
 #ifdef DEBUG
         Int label_id;
@@ -64,9 +64,9 @@ class AStar
         std::byte state_[0];
     };
 #ifdef DEBUG
-    static_assert(sizeof(Label) == 8 + 8 + 8 + 8 + 4 + 4);
+    static_assert(sizeof(Label) == 8 + 8 + 8 + 8 + 4 + 4 + 8);
 #else
-    static_assert(sizeof(Label) == 8 + 8 + 8 + 8 + 4 + 4);
+    static_assert(sizeof(Label) == 8 + 8 + 8 + 8 + 4 + 4 + 8);
 #endif
 
     // Comparison of labels in heuristic

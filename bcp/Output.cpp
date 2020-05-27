@@ -169,8 +169,8 @@ SCIP_RETCODE save_best_solution(
     }
 
     // Print paths.
-    println("");
-    print_used_paths(scip, sol);
+//    println("");
+//    print_used_paths(scip, sol);
 
     // Check if dummy variables are used.
     for (Agent a = 0; a < N; ++a)

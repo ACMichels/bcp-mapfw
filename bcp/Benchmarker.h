@@ -19,6 +19,7 @@ private:
 
 public:
     int benchmark_id;
+    double timeout;
     std::vector<Problem*> problems;
 
 
@@ -27,7 +28,7 @@ public:
 
     void load(std::vector<int> problem_id, bool debug);
 
-    void submit();
+    bool submit();
 
 };
 

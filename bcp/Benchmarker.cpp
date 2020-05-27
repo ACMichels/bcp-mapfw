@@ -48,6 +48,7 @@ Benchmarker::Benchmarker()
 
     // Read credentials.
     API_key_file.getline(API_key, 32);
+    timeout = 0;
 }
 
 Benchmarker::~Benchmarker()
@@ -110,6 +111,10 @@ void Benchmarker::load(std::vector<int> problem_id, bool debug)
 
             /* Setup problems */
             benchmark_id = json_data["attempt"];
+            if (json_data.contains("timeout"))
+            {
+                timeout = ((double)json_data["timeout"])/1000;
+            }
             for (nlohmann::json json_problem : json_data["problems"])
             {
                 problems.push_back(new Problem(json_problem));
@@ -133,20 +138,20 @@ void Benchmarker::load(std::vector<int> problem_id, bool debug)
 
 }
 
-void Benchmarker::submit()
+bool Benchmarker::submit()
 {
+    // Wether new problems are returned
+    bool new_problems = false;
+
     // put all data in json format
     nlohmann::json return_json;
 
     for (unsigned int i = 0; i < problems.size(); i++)
     {
         problems[i]->print();
-        if (problems[i]->solved)
-        {
-            nlohmann::json j;
-            problems[i]->to_json(j);
-            return_json["solutions"].push_back(j);
-        }
+        nlohmann::json j;
+        problems[i]->to_json(j);
+        return_json["solutions"].push_back(j);
     }
 //    return;
 
@@ -192,7 +197,21 @@ void Benchmarker::submit()
         if(res != CURLE_OK){
             err("curl_easy_perform() failed: {}\n", curl_easy_strerror(res));
         } else {
-            fmt::print("Successfully sent with returncode");
+//            std::cout << chunk.memory << "\n";
+            try{
+                nlohmann::json json_data = nlohmann::json::parse(chunk.memory);
+                problems.clear();
+
+                /* Setup problems */
+                benchmark_id = json_data["attempt"];
+                for (nlohmann::json json_problem : json_data["problems"])
+                {
+                    problems.push_back(new Problem(json_problem));
+                }
+                new_problems = true;
+            } catch (...) {
+                std::cout << chunk.memory << "\n";
+            }
         }
 
         /* always cleanup */
@@ -200,4 +219,9 @@ void Benchmarker::submit()
         delete headers;
 
     }
+
+    free(chunk.memory);
+    curl_global_cleanup();
+
+    return new_problems;
 }

@@ -63,15 +63,18 @@ void Problem::to_json(nlohmann::json& return_json)
     return_json["problem"] = id;
     return_json["time"] = elapsed.count();
     return_json["solution"];
-    for (int a = 0; a < agent_n; a++)
+    if (solved)
     {
-        nlohmann::json j2;
-        for (unsigned int c = 0; c < solution->paths[a].size(); c++)
+        for (int a = 0; a < agent_n; a++)
         {
-            j2[c].push_back(solution->paths[a][c].x);
-            j2[c].push_back(solution->paths[a][c].y);
+            nlohmann::json j2;
+            for (unsigned int c = 0; c < solution->paths[a].size(); c++)
+            {
+                j2[c].push_back(solution->paths[a][c].x);
+                j2[c].push_back(solution->paths[a][c].y);
+            }
+            return_json["solution"].push_back(j2);
         }
-        return_json["solution"].push_back(j2);
     }
 }
 

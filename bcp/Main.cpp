@@ -146,49 +146,60 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
 
     bm.load(instance_index, debug);
 
-    for (int i = 0; i < bm.problems.size(); i++)
+    int run_count = 0;
+    bool has_new_problems = true;
+    while(has_new_problems)
     {
-        Problem* problem = bm.problems[i];
-
-        // Start benchmark clock
-        problem->start_clock();
-
-        // Initialize SCIP.
-        SCIP* scip = nullptr;
-        SCIP_CALL(setup_solver(&scip));
-
-        // Read instance.
-        SCIP_CALL(read_instance(scip, problem));
-
-        // Set time limit.
-        if (time_limit > 0)
+        for (int i = 0; i < bm.problems.size(); i++)
         {
-            SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
+            Problem* problem = bm.problems[i];
+
+            // Start benchmark clock
+            problem->start_clock();
+
+            // Initialize SCIP.
+            SCIP* scip = nullptr;
+            SCIP_CALL(setup_solver(&scip));
+
+            // Read instance.
+            SCIP_CALL(read_instance(scip, problem));
+
+            // Set time limit.
+            if (bm.timeout > 0)
+            {
+                SCIP_CALL(SCIPsetRealParam(scip, "limits/time", bm.timeout));
+            }
+            else if (time_limit > 0)
+            {
+                SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
+            }
+            // Solve.
+            println("Start solving {}", 1+i+run_count*50);
+            SCIP_CALL(SCIPsolve(scip));
+
+            // Output.
+            {
+    //            // Print.
+    //            println("");
+    //            SCIP_CALL(SCIPprintStatistics(scip, NULL));
+    //
+    //            // Write best solution to file.
+    //            SCIP_CALL(write_best_solution(scip));
+
+                // Save best solution to problem
+                SCIP_CALL(save_best_solution(scip, problem));
+
+                // Stop benchmark clock
+                problem->stop_clock();
+            }
+
+            // Clean up
+            SCIP_CALL(cleanup_solver(scip));
         }
-        // Solve.
-        SCIP_CALL(SCIPsolve(scip));
 
-        // Output.
-        {
-//            // Print.
-//            println("");
-//            SCIP_CALL(SCIPprintStatistics(scip, NULL));
-//
-//            // Write best solution to file.
-//            SCIP_CALL(write_best_solution(scip));
-
-            // Save best solution to problem
-            SCIP_CALL(save_best_solution(scip, problem));
-
-            // Stop benchmark clock
-            problem->stop_clock();
-        }
-
-        // Clean up
-        SCIP_CALL(cleanup_solver(scip));
+        has_new_problems = bm.submit();
+        run_count++;
     }
-
-    bm.submit();
 
 
 

@@ -26,8 +26,9 @@ Author: Edward Lam <ed@ed-lam.com>
 #include "cxxopts.hpp"
 #include "Benchmarker.h"
 #include <stdlib.h>
+#include "CTPL/ctpl_stl.h"
 
-static SCIP_RETCODE setup_solver(SCIP** scip)
+static SCIP_RETCODE setup_solver(SCIP** scip, bool multi_threaded)
 {
     SCIP_CALL(SCIPcreate(scip));
 
@@ -47,6 +48,11 @@ static SCIP_RETCODE setup_solver(SCIP** scip)
         SCIP_CALL(SCIPsetIntParam(*scip, "separating/maxstallrounds", 5));
         SCIP_CALL(SCIPsetIntParam(*scip, "separating/maxstallroundsroot", 20));
         SCIP_CALL(SCIPsetIntParam(*scip, "separating/cutagelimit", -1));
+
+        if (multi_threaded)
+        {
+            SCIP_CALL(SCIPsetIntParam(*scip, "display/verblevel", 0));
+        }
 
         // Turn off all separation algorithms.
         SCIP_CALL(SCIPsetSeparating(*scip, SCIP_PARAMSETTING_OFF, TRUE));
@@ -107,7 +113,7 @@ static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, 
 {
     // Initialize SCIP.
     SCIP* scip = nullptr;
-    SCIP_CALL(setup_solver(&scip));
+    SCIP_CALL(setup_solver(&scip, false));
 
 
     // Read instance.
@@ -140,7 +146,49 @@ static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, 
 
 }
 
-static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real time_limit, Agent agents_limit, bool debug)
+static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number, SCIP_Real time_limit, bool multi_threaded)
+{
+    // Start benchmark clock
+    problem->start_clock();
+
+    // Initialize SCIP.
+    SCIP* scip = nullptr;
+    SCIP_CALL(setup_solver(&scip, multi_threaded));
+
+    // Read instance.
+    SCIP_CALL(read_instance(scip, problem));
+
+    // Set time limit.
+    if (time_limit > 0)
+    {
+        SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
+    }
+    // Solve.
+    println("Start solving {}", number);
+    SCIP_CALL(SCIPsolve(scip));
+    println("Finished solving {}", number);
+
+    // Output.
+    {
+//        // Print.
+//        println("");
+//        SCIP_CALL(SCIPprintStatistics(scip, NULL));
+//
+//        // Write best solution to file.
+//        SCIP_CALL(write_best_solution(scip));
+
+        // Save best solution to problem
+        SCIP_CALL(save_best_solution(scip, problem));
+
+        // Stop benchmark clock
+        problem->stop_clock();
+    }
+
+    // Clean up
+    SCIP_CALL(cleanup_solver(scip));
+}
+
+static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real time_limit, Agent agents_limit, const bool debug, const int threadcount)
 {
     Benchmarker bm;
 
@@ -150,55 +198,33 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
     bool has_new_problems = true;
     while(has_new_problems)
     {
-        for (int i = 0; i < bm.problems.size(); i++)
+        if (threadcount > 1)
         {
-            Problem* problem = bm.problems[i];
+            ctpl::thread_pool thread_pool_(threadcount);
 
-            // Start benchmark clock
-            problem->start_clock();
-
-            // Initialize SCIP.
-            SCIP* scip = nullptr;
-            SCIP_CALL(setup_solver(&scip));
-
-            // Read instance.
-            SCIP_CALL(read_instance(scip, problem));
-
-            // Set time limit.
-            if (bm.timeout > 0)
+            for (int i = 0; i < bm.problems.size(); i++)
             {
-                SCIP_CALL(SCIPsetRealParam(scip, "limits/time", bm.timeout));
+                Problem* problem = bm.problems[i];
+
+                thread_pool_.push(run_instance, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), true);
             }
-            else if (time_limit > 0)
-            {
-                SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
-            }
-            // Solve.
-            println("Start solving {}", 1+i+run_count*50);
-            SCIP_CALL(SCIPsolve(scip));
+            thread_pool_.stop(true);
 
-            // Output.
-            {
-    //            // Print.
-    //            println("");
-    //            SCIP_CALL(SCIPprintStatistics(scip, NULL));
-    //
-    //            // Write best solution to file.
-    //            SCIP_CALL(write_best_solution(scip));
-
-                // Save best solution to problem
-                SCIP_CALL(save_best_solution(scip, problem));
-
-                // Stop benchmark clock
-                problem->stop_clock();
-            }
-
-            // Clean up
-            SCIP_CALL(cleanup_solver(scip));
+            has_new_problems = bm.submit();
+            run_count++;
         }
+        else
+        {
+            for (int i = 0; i < bm.problems.size(); i++)
+            {
+                Problem* problem = bm.problems[i];
 
-        has_new_problems = bm.submit();
-        run_count++;
+                run_instance(0, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), false);
+            }
+
+            has_new_problems = bm.submit();
+            run_count++;
+        }
     }
 
 
@@ -219,6 +245,7 @@ SCIP_RETCODE start_solver(
     bool index_mode = false;
     SCIP_Real time_limit = 0;
     bool debug = false;
+    int thread_count = 1;
     Agent agents_limit = std::numeric_limits<Agent>::max();
     try
     {
@@ -233,6 +260,7 @@ SCIP_RETCODE start_solver(
             ("i,index", "Index on instance in database", cxxopts::value<Vector<int>>())
             ("t,time-limit", "Time limit in seconds", cxxopts::value<SCIP_Real>())
             ("a,agents-limit", "Read first N agents only", cxxopts::value<int>())
+            ("p,parallel", "Number of parallel runs to use for benchmarking", cxxopts::value<int>())
             ("d,debug", "Run in debug mode")
         ;
         options.parse_positional({"file"});
@@ -259,6 +287,12 @@ SCIP_RETCODE start_solver(
         {
             index_mode = true;
             instance_index = result["index"].as<Vector<int>>();
+        }
+
+        // Get thread count.
+        if (result.count("parallel"))
+        {
+            thread_count = result["parallel"].as<int>();
         }
 
         // Get debug.
@@ -322,7 +356,7 @@ SCIP_RETCODE start_solver(
 
     if (index_mode)
     {
-        SCIP_CALL(run_index_solver(instance_index, time_limit, agents_limit, debug));
+        SCIP_CALL(run_index_solver(instance_index, time_limit, agents_limit, debug, thread_count));
     }
 
     // Done.

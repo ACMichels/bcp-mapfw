@@ -13,3 +13,6 @@
 [submodule "curl"]
 	path = curl
 	url = https://github.com/curl/curl
+[submodule "CTPL"]
+	path = CTPL
+	url = https://github.com/vit-vit/CTPL

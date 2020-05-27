@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(bcp-mapf)
+project(bcp-mapfw)
 
 # Verbose.
 #set(CMAKE_VERBOSE_MAKEFILE on)
@@ -153,14 +153,15 @@ set(MAPF_SOURCE_FILES
 	bcp/Benchmarker.h
 	bcp/Problem.cpp
 	bcp/Problem.h
+	CTPL/ctpl_stl.h
 )
 include_directories(bcp/)
 
 # Add executable.
-add_executable(bcp-mapf ${MAPF_SOURCE_FILES} ${TRUFFLEHOG_SOURCE_FILES})
-target_link_libraries(bcp-mapf fmt::fmt-header-only libscip ${LIBM})
-target_link_libraries(bcp-mapf ${CURL_LIBRARIES})
-target_link_libraries(bcp-mapf nlohmann_json::nlohmann_json)
+add_executable(bcp-mapfw ${MAPF_SOURCE_FILES} ${TRUFFLEHOG_SOURCE_FILES})
+target_link_libraries(bcp-mapfw fmt::fmt-header-only libscip ${LIBM})
+target_link_libraries(bcp-mapfw ${CURL_LIBRARIES})
+target_link_libraries(bcp-mapfw nlohmann_json::nlohmann_json)
 
 # Enable the families of cuts.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_WAITEDGE_CONFLICTS")
@@ -175,6 +176,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_GOAL_CONFLICTS")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -m64")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Wno-ignored-attributes")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -Wno-ignored-attributes")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG -funroll-loops -fstrict-aliasing")

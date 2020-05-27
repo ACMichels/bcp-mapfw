@@ -90,18 +90,74 @@ Vector<int> filterWaypoints(Vector<Node> waypoints, WPpassed toFilter)
     return ind;
 }
 
+IntCost AStar::remaining_h(const WPpassed current_w,
+                           const Node next,
+                           const Node goal,
+                           const Vector<Node> waypoints,
+                           const WPpassed goalPassed)
+{
+    Vector<int> findeces = filterWaypoints(waypoints, current_w & (~goalPassed));
+
+    switch(findeces.size())
+    {
+        case 0:
+        {
+            return 0;
+        }
+        case 1:
+        {
+            return (*h_goal_)[waypoints[findeces[0]]];
+        }
+        default:
+        {
+            IntCost sum_dist = 0;
+            IntCost min_goal_dist = 1e7;
+            for (int i = 0; i < findeces.size(); i++)
+            {
+                if (waypoints[findeces[i]] != next)
+                {
+                    IntCost min_dist = 1e7;
+                    for (int j = 0; j < findeces.size(); j++)
+                    {
+                        if (i != j)
+                        {
+                            IntCost local_dist = (*h_waypoints_[j])[waypoints[findeces[i]]];
+                            if (local_dist < min_dist)
+                            {
+                                min_dist = local_dist;
+                            }
+                        }
+                    }
+                    sum_dist += min_dist;
+                    IntCost local_goal_dist = (*h_goal_)[waypoints[findeces[i]]];
+                    if (local_goal_dist < min_goal_dist)
+                    {
+                        min_goal_dist = local_goal_dist;
+                    }
+                }
+            }
+            sum_dist += min_goal_dist;
+            return sum_dist;
+        }
+    }
+}
+
 AStar::AStar(const Map& map)
     : map_(map),
+//      TSP_label_pool_(),
       label_pool_(),
-      heuristic_(map, label_pool_),
+      h_label_pool_(),
+      heuristic_(map, h_label_pool_),
       edge_penalties_(),
       time_finish_penalties_(),
 #ifdef USE_GOAL_CONFLICTS
       goal_crossings_(),
 #endif
+      TSP_open_(map.size()),
       open_(map.size()),
       frontier_without_resources_(),
       h_(nullptr),
+      h_goal_(nullptr),
       time_finish_h_()
 #ifdef DEBUG
     , nb_labels_(0)
@@ -194,6 +250,7 @@ void AStar::generate_start(const NodeTime start)
     new_label->f = h;
     new_label->nt = start.nt;
     new_label->w = start.w;
+    new_label->parent = nullptr;
     new_label->pqueue_index = -1;
 #ifdef DEBUG
     new_label->label_id = nb_labels_++;
@@ -308,12 +365,17 @@ void AStar::generate(Label* const current,
     const auto new_t = current->t + 1;
 
     WPpassed wpp = current->w;
-    auto findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
-    if (findeces.size() > 0 && node == waypoints[findeces[0]])
+    auto it = find(waypoints.begin(), waypoints.end(), node);
+    if (it != waypoints.end())
     {
-        wpp &= ~(1<<(findeces[0]));
-        findeces.erase(findeces.begin());
+        wpp &= ~(1<<(it-waypoints.begin()));
     }
+    auto findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
+//    if (findeces.size() > 0 && node == waypoints[findeces[0]])
+//    {
+//        wpp &= ~(1<<(findeces[0]));
+//        findeces.erase(findeces.begin());
+//    }
     const NodeTime nt(node, new_t, wpp);
 
     // Compute h_to_goal
@@ -599,43 +661,24 @@ Pair<Vector<NodeTime>, Cost> AStar::solve(const NodeTime start,
                                           const Time goal_latest,
                                           const Cost max_cost,
                                           const std::vector<Node> waypoints,
-                                          const WPpassed waypoints_to_visit)
+                                          const WPpassed waypoints_to_leave)
 {
-    return solve_internal<true, is_farkas>(start, goal, goal_earliest, goal_latest, max_cost, waypoints, waypoints_to_visit);
-}
-template Pair<Vector<NodeTime>, Cost> AStar::solve<false>(const NodeTime start,
-                                                          const Node goal,
-                                                          const Time goal_earliest,
-                                                          const Time goal_latest,
-                                                          const Cost max_cost,
-                                                          const std::vector<Node> waypoints,
-                                                          const WPpassed waypoints_to_visit);
-template Pair<Vector<NodeTime>, Cost> AStar::solve<true>(const NodeTime start,
-                                                         const Node goal,
-                                                         const Time goal_earliest,
-                                                         const Time goal_latest,
-                                                         const Cost max_cost,
-                                                         const std::vector<Node> waypoints,
-                                                         const WPpassed waypoints_to_visit);
+    // Get number of resources.
+#ifdef USE_GOAL_CONFLICTS
+    const auto nb_goal_crossings = static_cast<Int>(goal_crossings_.size());
+#else
+    constexpr Int nb_goal_crossings = 0;
+#endif
 
-template<bool without_resources, bool is_farkas>
-Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
-                                                   const Node goal,
-                                                   const Time goal_earliest,
-                                                   const Time goal_latest,
-                                                   const Cost max_cost,
-                                                   const std::vector<Node> waypoints,
-                                                   const WPpassed waypoints_to_visit)
-{
-
-    // Create output.
-    Pair<Vector<NodeTime>, Cost> output;
-    auto& path = output.first;
-    auto& path_cost = output.second;
+    // Reset
+    const auto nb_states = nb_goal_crossings;
+//    TSP_label_pool_.reset(sizeof(Label) + (nb_states / CHAR_BIT) + (nb_states % CHAR_BIT != 0));
+    label_pool_.reset(sizeof(Label) + (nb_states / CHAR_BIT) + (nb_states % CHAR_BIT != 0));
+    LabelPool& TSP_label_pool_ = label_pool_;
 
     // Get h values to the goal node. Compute them if necessary.
     debug_assert(heuristic_.max_path_length() >= 1);
-    h_ = &heuristic_.compute_h(goal);
+    h_goal_ = &heuristic_.compute_h(goal);
 
     // Clear waypoints
     h_waypoints_.clear();
@@ -645,6 +688,239 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
     {
         h_waypoints_.push_back(&heuristic_.compute_h(waypoints[i]));
     }
+
+
+
+    // Create start label.
+    auto new_label_initial = reinterpret_cast<Label*>(TSP_label_pool_.get_label_buffer());
+    memset(new_label_initial, 0, TSP_label_pool_.label_size());
+    new_label_initial->parent = nullptr;
+    new_label_initial->g = 0;
+    new_label_initial->f = 0;//remaining_h(start.w, 63, goal, waypoints, waypoints_to_leave);
+    new_label_initial->nt = start.nt;
+    new_label_initial->w = start.w;
+    new_label_initial->pqueue_index = -1;
+#ifdef DEBUG
+    new_label->label_id = nb_labels_++;
+#endif
+
+    // Store the label.
+    debug_assert(TSP_open_.empty());
+    TSP_label_pool_.take_label();
+    TSP_open_.push(new_label_initial);
+
+    // Create output.
+    Pair<Vector<NodeTime>, Cost> output_final;
+
+//    println(""); // REMOVE
+//    println("***NEW***"); // REMOVE
+//    println(""); // REMOVE
+    while(!TSP_open_.empty())
+    {
+        // Get a label from priority queue.
+        const auto current = TSP_open_.top();
+        TSP_open_.pop();
+
+        IntCost current_cost = current->g;
+
+        auto findeces = filterWaypoints(waypoints, current->w & ~(waypoints_to_leave));
+        if (!findeces.empty())
+        {
+            for (int i = 0; i < findeces.size(); i++)
+            {
+                auto res = solve_internal<true, is_farkas>(NodeTime(current->nt, current->w), waypoints[findeces[i]], goal_earliest, goal_latest, max_cost-current_cost, waypoints, ~0);//~(1<<findeces[i]));
+                if (res.first)
+                {
+                    auto& res_label = res.first;
+
+                    // Create start label (reverse)
+                    auto new_label_start = reinterpret_cast<Label*>(TSP_label_pool_.get_label_buffer());
+                    memcpy(new_label_start, res_label, TSP_label_pool_.label_size());
+
+                    new_label_start->g = res_label->g + current_cost;
+                    new_label_start->f = new_label_start->g + remaining_h(res_label->w, waypoints[findeces[i]], goal, waypoints, waypoints_to_leave);
+                    new_label_start->parent = nullptr;
+                    new_label_start->pqueue_index = -1;
+
+                    TSP_label_pool_.take_label();
+                    TSP_open_.push(new_label_start);
+
+
+                    // Create all labels
+                    auto previous = new_label_start;
+                    auto l = res_label->parent;
+                    for (; l && l->parent; l = l->parent)
+                    {
+                        auto new_label_mid = reinterpret_cast<Label*>(TSP_label_pool_.get_label_buffer());
+                        memcpy(new_label_mid, l, TSP_label_pool_.label_size());
+
+//                        new_label_mid->g = l->g + current_cost;
+//                        new_label_mid->f = new_label_mid->g;
+                        new_label_mid->parent = nullptr;
+
+                        TSP_label_pool_.take_label();
+
+                        previous->parent = new_label_mid;
+                        previous = new_label_mid;
+                    }
+
+                    if (l)
+                    {
+//                        previous->parent = current;
+                        auto new_label_end = reinterpret_cast<Label*>(TSP_label_pool_.get_label_buffer());
+                        memcpy(new_label_end, l, TSP_label_pool_.label_size());
+
+//                        new_label_end->g = l->g + current_cost;
+//                        new_label_end->f = new_label_end->g;
+                        new_label_end->parent = current->parent;
+
+                        TSP_label_pool_.take_label();
+
+                        previous->parent = new_label_end;
+                    }
+                    else
+                    {
+                        println("FLIPPETYFLOPPETY"); // REMOVE
+                        new_label_start->parent = current->parent;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (current->n == goal && current->t > start.t)
+            {
+                // Create output
+                auto& path_final = output_final.first;
+                auto& path_cost_final = output_final.second;
+
+                path_cost_final = current_cost;
+
+                for (auto l = current; l; l = l->parent)
+                {
+                    path_final.push_back({l->nt, l->w});
+                }
+                std::reverse(path_final.begin(), path_final.end());
+
+                return output_final;
+//                break;
+            }
+            else
+            {
+                auto res = solve_internal<true, is_farkas>(NodeTime(current->nt, current->w), goal, goal_earliest, goal_latest, max_cost-current_cost, waypoints, ~0);//waypoints_to_leave);
+                if (res.first)
+                {
+                    auto& res_label = res.first;
+
+                    // Create start label (reverse)
+                    auto new_label_start = reinterpret_cast<Label*>(TSP_label_pool_.get_label_buffer());
+                    memcpy(new_label_start, res_label, TSP_label_pool_.label_size());
+
+                    new_label_start->g = res_label->g + current_cost;
+                    new_label_start->f = new_label_start->g;
+                    new_label_start->parent = nullptr;
+                    new_label_start->pqueue_index = -1;
+
+                    TSP_label_pool_.take_label();
+                    TSP_open_.push(new_label_start);
+
+
+                    // Create all labels
+                    auto previous = new_label_start;
+                    auto l = res_label->parent;
+                    for (; l && l->parent; l = l->parent)
+                    {
+                        auto new_label_mid = reinterpret_cast<Label*>(TSP_label_pool_.get_label_buffer());
+                        memcpy(new_label_mid, l, TSP_label_pool_.label_size());
+
+//                        new_label_mid->g = l->g + current_cost;
+//                        new_label_mid->f = new_label_mid->g;
+                        new_label_mid->parent = nullptr;
+
+                        TSP_label_pool_.take_label();
+
+                        previous->parent = new_label_mid;
+                        previous = new_label_mid;
+                    }
+
+                    if (l)
+                    {
+//                        previous->parent = current;
+                        auto new_label_end = reinterpret_cast<Label*>(TSP_label_pool_.get_label_buffer());
+                        memcpy(new_label_end, l, TSP_label_pool_.label_size());
+
+//                        new_label_end->g = l->g + current_cost;
+//                        new_label_end->f = new_label_end->g;
+                        new_label_end->parent = current->parent;
+
+                        TSP_label_pool_.take_label();
+
+                        previous->parent = new_label_end;
+                    }
+                    else
+                    {
+                        println("FLIPPETYFLOPPETY"); // REMOVE
+                        new_label_start->parent = current->parent;
+                    }
+                }
+            }
+        }
+    }
+
+    // No solution found
+
+//    auto res = solve_internal<true, is_farkas>(start, goal, goal_earliest, goal_latest, max_cost, waypoints, waypoints_to_leave);
+//
+//    // Create output.
+//    Pair<Vector<NodeTime>, Cost> output;
+//    auto& path = output.first;
+//    auto& path_cost = output.second;
+//
+//    path_cost = res.second;
+//
+//    for (auto l = res.first; l; l = l->parent)
+//    {
+//        path.push_back({l->nt, l->w});
+//    }
+//    std::reverse(path.begin(), path.end());
+
+    return output_final;
+}
+template Pair<Vector<NodeTime>, Cost> AStar::solve<false>(const NodeTime start,
+                                                          const Node goal,
+                                                          const Time goal_earliest,
+                                                          const Time goal_latest,
+                                                          const Cost max_cost,
+                                                          const std::vector<Node> waypoints,
+                                                          const WPpassed waypoints_to_leave);
+template Pair<Vector<NodeTime>, Cost> AStar::solve<true>(const NodeTime start,
+                                                         const Node goal,
+                                                         const Time goal_earliest,
+                                                         const Time goal_latest,
+                                                         const Cost max_cost,
+                                                         const std::vector<Node> waypoints,
+                                                         const WPpassed waypoints_to_leave);
+
+template<bool without_resources, bool is_farkas>
+Pair<AStar::Label*, Cost> AStar::solve_internal(const NodeTime start,
+                                         const Node goal,
+                                         const Time goal_earliest,
+                                         const Time goal_latest,
+                                         const Cost max_cost,
+                                         const std::vector<Node> waypoints,
+                                         const WPpassed waypoints_to_leave)
+{
+
+//    // Create output.
+//    Pair<Vector<NodeTime>, Cost> output;
+//    auto& path = output.first;
+//    auto& path_cost = output.second;
+
+    // Create output.
+    Pair<Label*, Cost> output;
+    auto& path = output.first;
+    auto& path_cost = output.second;
+    path = nullptr;
 
     // Calculate the default edge cost.
     constexpr IntCost default_cost = is_farkas ? 0 : 1;
@@ -686,8 +962,8 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
 
     // Reset.
     const auto nb_states = nb_goal_crossings;
-    label_pool_.reset(sizeof(Label) + (nb_states / CHAR_BIT) + (nb_states % CHAR_BIT != 0));
     open_.clear();
+    h_ = &heuristic_.compute_h(goal);
     static_assert(without_resources);
     if constexpr (without_resources)
     {
@@ -727,7 +1003,7 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
                                                                  goal_latest,
                                                                  max_cost,
                                                                  waypoints,
-                                                                 waypoints_to_visit);
+                                                                 waypoints_to_leave);
         }
         else
         {
@@ -738,38 +1014,39 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
             path_cost = current->g;
 
             // Store the path.
-            for (auto l = parent; l; l = l->parent)
-            {
-                path.push_back({l->nt, l->w});
-            }
-            std::reverse(path.begin(), path.end());
-
-            // Print.
-#ifdef DEBUG
-            if (verbose)
-            {
-                println("Reached goal at label {} {} (n {}, t {}, nt {}, position ({},{}), g {}, h {}, f {}{})",
-                        current->label_id,
-                        fmt::ptr(current),
-                        decltype(parent->n){parent->n},
-                        decltype(parent->t){parent->t},
-                        decltype(parent->nt){parent->nt},
-                        map_.get_x(parent->n),
-                        map_.get_y(parent->n),
-                        current->g,
-                        current->f - current->g,
-                        current->f,
-                        make_goal_state_string(&current->state_[0], nb_goal_crossings));
-
-                fmt::print("Found path with cost {}: ", path_cost);
-                for (const auto nt : path)
-                {
-                    fmt::print("({},{}) ", map_.get_x(nt.n), map_.get_y(nt.n));
-                }
-                println("");
-            }
-#endif
-
+            path = parent;
+//            for (auto l = parent; l; l = l->parent)
+//            {
+//                path.push_back({l->nt, l->w});
+//            }
+//            std::reverse(path.begin(), path.end());
+//
+//            // Print.
+//#ifdef DEBUG
+//            if (verbose)
+//            {
+//                println("Reached goal at label {} {} (n {}, t {}, nt {}, position ({},{}), g {}, h {}, f {}{})",
+//                        current->label_id,
+//                        fmt::ptr(current),
+//                        decltype(parent->n){parent->n},
+//                        decltype(parent->t){parent->t},
+//                        decltype(parent->nt){parent->nt},
+//                        map_.get_x(parent->n),
+//                        map_.get_y(parent->n),
+//                        current->g,
+//                        current->f - current->g,
+//                        current->f,
+//                        make_goal_state_string(&current->state_[0], nb_goal_crossings));
+//
+//                fmt::print("Found path with cost {}: ", path_cost);
+//                for (const auto nt : path)
+//                {
+//                    fmt::print("({},{}) ", map_.get_x(nt.n), map_.get_y(nt.n));
+//                }
+//                println("");
+//            }
+//#endif
+//
             // Check.
             debug_assert(path_cost <= max_cost);
             debug_assert(goal_earliest <= current->t && current->t <= goal_latest);
@@ -790,20 +1067,20 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
     // Return.
     return output;
 }
-template Pair<Vector<NodeTime>, Cost> AStar::solve_internal<true, false>(const NodeTime start,
-                                                                         const Node goal,
-                                                                         const Time goal_earliest,
-                                                                         const Time goal_latest,
-                                                                         const Cost max_cost,
-                                                                         const std::vector<Node> waypoints,
-                                                                         const WPpassed waypoints_to_visit);
-template Pair<Vector<NodeTime>, Cost> AStar::solve_internal<true, true>(const NodeTime start,
-                                                                        const Node goal,
-                                                                        const Time goal_earliest,
-                                                                        const Time goal_latest,
-                                                                        const Cost max_cost,
-                                                                        const std::vector<Node> waypoints,
-                                                                        const WPpassed waypoints_to_visit);
+template Pair<AStar::Label*, Cost> AStar::solve_internal<true, false>(const NodeTime start,
+                                                                      const Node goal,
+                                                                      const Time goal_earliest,
+                                                                      const Time goal_latest,
+                                                                      const Cost max_cost,
+                                                                      const std::vector<Node> waypoints,
+                                                                      const WPpassed waypoints_to_leave);
+template Pair<AStar::Label*, Cost> AStar::solve_internal<true, true>(const NodeTime start,
+                                                                     const Node goal,
+                                                                     const Time goal_earliest,
+                                                                     const Time goal_latest,
+                                                                     const Cost max_cost,
+                                                                     const std::vector<Node> waypoints,
+                                                                     const WPpassed waypoints_to_leave);
 
 #ifdef DEBUG
 

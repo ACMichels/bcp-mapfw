@@ -92,7 +92,9 @@ class AStar
     const Map& map_;
 
     // Labels
+//    LabelPool TSP_label_pool_;
     LabelPool label_pool_;
+    LabelPool h_label_pool_;
 
     // Heuristic
     Heuristic heuristic_;
@@ -104,10 +106,14 @@ class AStar
     Vector<GoalCrossing> goal_crossings_;
 #endif
 
+    // Temporary storage for each TSP run
+    PriorityQueue<Label, LabelCompare, false> TSP_open_;
+
     // Temporary storage for each run
     PriorityQueue<Label, LabelCompare, false> open_;
     HashTable<NodeTimeWaypoint, Label*> frontier_without_resources_;
     const Vector<IntCost>* h_;
+    const Vector<IntCost>* h_goal_;
     Vector<const Vector<IntCost>*> h_waypoints_;
     Vector<Cost> time_finish_h_;
 
@@ -144,7 +150,7 @@ class AStar
                                        const Time goal_latest,// = std::numeric_limits<Time>::max(),
                                        const Cost max_cost,// = std::numeric_limits<Cost>::infinity(),
                                        const std::vector<Node> waypoints,// = std::vector<Node>(),
-                                       const WPpassed waypoints_to_visit);// = 0);
+                                       const WPpassed waypoints_to_leave);// = 0);
 
     // Debug
 #ifdef DEBUG
@@ -157,6 +163,12 @@ class AStar
   private:
     // Check if a label is dominated by an existing label
     AStar::Label* dominated_without_resources(Label* const new_label);
+
+    IntCost remaining_h(const WPpassed current_w,
+                        const Node next,
+                        const Node goal,
+                        const Vector<Node> waypoints,
+                        const WPpassed goalPassed);
 
     // Solve
     template <bool without_resources>
@@ -181,13 +193,13 @@ class AStar
     template<bool without_resources, IntCost default_cost>
     void generate_goal_neighbours(const Label* const current);
     template<bool without_resources, bool is_farkas>
-    Pair<Vector<NodeTime>, Cost> solve_internal(const NodeTime start,
-                                                const Node goal,
-                                                const Time goal_earliest,// = 0,
-                                                const Time goal_latest,// = std::numeric_limits<Time>::max(),
-                                                const Cost max_cost,// = std::numeric_limits<Cost>::infinity(),
-                                                const std::vector<Node> waypoints,// = std::vector<Node>(),
-                                                const WPpassed waypoints_to_visit);// = 0);
+    Pair<Label*, Cost> solve_internal(const NodeTime start,
+                                      const Node goal,
+                                      const Time goal_earliest,// = 0,
+                                      const Time goal_latest,// = std::numeric_limits<Time>::max(),
+                                      const Cost max_cost,// = std::numeric_limits<Cost>::infinity(),
+                                      const std::vector<Node> waypoints,// = std::vector<Node>(),
+                                      const WPpassed waypoints_to_leave);// = 0);
 };
 
 }

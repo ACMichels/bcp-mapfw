@@ -190,43 +190,46 @@ static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number
 
 static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real time_limit, Agent agents_limit, const bool debug, const int threadcount)
 {
-    Benchmarker bm;
 
-    bm.load(instance_index, debug);
-
-    int run_count = 0;
-    bool has_new_problems = true;
-    while(has_new_problems)
+    for (int i = 0; i < instance_index.size(); i++)
     {
-        if (threadcount > 1)
+        Benchmarker bm;
+
+        bm.load(instance_index[i], debug);
+
+        int run_count = 0;
+        bool has_new_problems = true;
+        while(has_new_problems)
         {
-            ctpl::thread_pool thread_pool_(threadcount);
-
-            for (int i = 0; i < bm.problems.size(); i++)
+            if (threadcount > 1)
             {
-                Problem* problem = bm.problems[i];
+                ctpl::thread_pool thread_pool_(threadcount);
 
-                thread_pool_.push(run_instance, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), true);
+                for (int i = 0; i < bm.problems.size(); i++)
+                {
+                    Problem* problem = bm.problems[i];
+
+                    thread_pool_.push(run_instance, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), true);
+                }
+                thread_pool_.stop(true);
+
+                has_new_problems = bm.submit();
+                run_count++;
             }
-            thread_pool_.stop(true);
-
-            has_new_problems = bm.submit();
-            run_count++;
-        }
-        else
-        {
-            for (int i = 0; i < bm.problems.size(); i++)
+            else
             {
-                Problem* problem = bm.problems[i];
+                for (int i = 0; i < bm.problems.size(); i++)
+                {
+                    Problem* problem = bm.problems[i];
 
-                run_instance(0, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), true);
+                    run_instance(0, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), true);
+                }
+
+                has_new_problems = bm.submit();
+                run_count++;
             }
-
-            has_new_problems = bm.submit();
-            run_count++;
         }
     }
-
 
 
     return SCIP_OKAY;

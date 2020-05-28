@@ -59,7 +59,7 @@ Benchmarker::~Benchmarker()
     }
 }
 
-void Benchmarker::load(std::vector<int> problem_id, bool debug)
+void Benchmarker::load(int problem_id, bool debug)
 {
 //    nlohmann::json problem_jsonn = "{\"id\":3451,\"problem\":\"{\\\"grid\\\": [[1, 1, 1, 1, 1, 1, 1], [1, 0, 1, 1, 0, 0, 1], [1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]], \\\"width\\\": 7, \\\"height\\\": 5, \\\"starts\\\": [[5, 1], [1, 2], [2, 2]], \\\"goals\\\": [[4, 1], [5, 2], [1, 1]], \\\"waypoints\\\": [[[1, 3]], [], []]}\"}"_json;
 //
@@ -91,7 +91,7 @@ void Benchmarker::load(std::vector<int> problem_id, bool debug)
         /* First set the URL that is about to receive our POST. This URL can
            just as well be a https:// URL if that is what should receive the
            data. */
-        curl_easy_setopt(curl, CURLOPT_URL, fmt::format("https://mapfw.nl/api/benchmarks/{}/problems", problem_id[0]).c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, fmt::format("https://mapfw.nl/api/benchmarks/{}/problems", problem_id).c_str());
         /* Now specify the POST data */
         std::string opts = fmt::format("{{\"algorithm\" : \"{}\", \"version\": \"{}\", \"debug\": {} }}", _ALGORITHM, _VERSION, (debug?"true":"false"));
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, opts.c_str());

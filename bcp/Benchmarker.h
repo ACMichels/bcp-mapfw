@@ -26,7 +26,7 @@ public:
     Benchmarker();
     ~Benchmarker();
 
-    void load(std::vector<int> problem_id, bool debug);
+    void load(int problem_id, bool debug);
 
     bool submit();
 

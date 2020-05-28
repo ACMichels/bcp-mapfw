@@ -64,10 +64,10 @@ include_directories(SYSTEM cxxopts/include)
 
 # Include curl
 set(CURL_LIBRARY "-lcurl")
-#find_package(CURL REQUIRED)
+find_package(CURL REQUIRED)
 #add_executable (bcp-mapf convert.cpp)
-#include_directories(${CURL_INCLUDE_DIR})
-include_directories(SYSTEM curl/include)
+include_directories(${CURL_INCLUDE_DIR})
+#include_directories(SYSTEM curl/include)
 
 # Include json.
 set(JSON_BuildTests OFF CACHE INTERNAL "")
@@ -160,7 +160,7 @@ include_directories(bcp/)
 # Add executable.
 add_executable(bcp-mapfw ${MAPF_SOURCE_FILES} ${TRUFFLEHOG_SOURCE_FILES})
 target_link_libraries(bcp-mapfw fmt::fmt-header-only libscip ${LIBM})
-target_link_libraries(bcp-mapfw curl)
+target_link_libraries(bcp-mapfw ${CURL_LIBRARIES})
 target_link_libraries(bcp-mapfw nlohmann_json::nlohmann_json)
 
 # Enable the families of cuts.

@@ -64,7 +64,7 @@ include_directories(SYSTEM cxxopts/include)
 
 # Include curl
 set(CURL_LIBRARY "-lcurl")
-find_package(CURL REQUIRED)
+#find_package(CURL REQUIRED)
 #add_executable (bcp-mapf convert.cpp)
 #include_directories(${CURL_INCLUDE_DIR})
 include_directories(SYSTEM curl/include)

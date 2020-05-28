@@ -160,7 +160,7 @@ include_directories(bcp/)
 # Add executable.
 add_executable(bcp-mapfw ${MAPF_SOURCE_FILES} ${TRUFFLEHOG_SOURCE_FILES})
 target_link_libraries(bcp-mapfw fmt::fmt-header-only libscip ${LIBM})
-target_link_libraries(bcp-mapfw ${CURL_LIBRARIES})
+target_link_libraries(bcp-mapfw curl)
 target_link_libraries(bcp-mapfw nlohmann_json::nlohmann_json)
 
 # Enable the families of cuts.

@@ -41,7 +41,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 Benchmarker::Benchmarker()
 {
     // Load API key
-    std::string API_key_file_location = "/home/andor/Documents/BCP-MAFPW/bcp-mapfw/credentials.txt";
+    std::string API_key_file_location = "../credentials.txt";
     std::ifstream API_key_file;
     API_key_file.open(API_key_file_location, std::ios::in);
     release_assert(API_key_file.good(), "Invalid credentials file {}", API_key_file_location);

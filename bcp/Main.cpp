@@ -222,7 +222,7 @@ static SCIP_RETCODE run_index_solver(std::vector<int> instance_index, SCIP_Real 
                 {
                     Problem* problem = bm.problems[i];
 
-                    run_instance(0, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), true);
+                    run_instance(0, problem, i, 1+i+run_count*50, (bm.timeout > 0 ? bm.timeout : time_limit), bm.problems.size() == 1 ? false :true);
                 }
 
                 has_new_problems = bm.submit();

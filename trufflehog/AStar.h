@@ -143,7 +143,7 @@ class AStar
                                        const Time goal_earliest,// = 0,
                                        const Time goal_latest,// = std::numeric_limits<Time>::max(),
                                        const Cost max_cost,// = std::numeric_limits<Cost>::infinity(),
-                                       const std::vector<Node> waypoints,// = std::vector<Node>(),
+                                       const Vector<Node>& waypoints,// = std::vector<Node>(),
                                        const WPpassed waypoints_to_visit);// = 0);
 
     // Debug
@@ -168,7 +168,7 @@ class AStar
                   const Cost cost,
                   const Time goal_latest,
                   const Cost max_cost,
-                  const Vector<Node> waypoints,
+                  const Vector<Node>& waypoints,
                   const WPpassed goalPassed);
     template<bool without_resources, IntCost default_cost>
     void generate_neighbours(Label* const current,
@@ -176,7 +176,7 @@ class AStar
                              const Time goal_earliest,
                              const Time goal_latest,
                              const Cost max_cost,
-                             const Vector<Node> waypoints,
+                             const Vector<Node>& waypoints,
                              const WPpassed goalPassed);
     template<bool without_resources, IntCost default_cost>
     void generate_goal_neighbours(const Label* const current);
@@ -186,7 +186,7 @@ class AStar
                                                 const Time goal_earliest,// = 0,
                                                 const Time goal_latest,// = std::numeric_limits<Time>::max(),
                                                 const Cost max_cost,// = std::numeric_limits<Cost>::infinity(),
-                                                const std::vector<Node> waypoints,// = std::vector<Node>(),
+                                                const Vector<Node>& waypoints,// = std::vector<Node>(),
                                                 const WPpassed waypoints_to_visit);// = 0);
 };
 

@@ -75,7 +75,7 @@ String make_goal_state_string(const std::byte* const state, const Int nb_goal_cr
 }
 #endif
 
-Vector<int> filterWaypoints(Vector<Node> waypoints, WPpassed toFilter)
+Vector<int> filterWaypoints(const Vector<Node>& waypoints, WPpassed toFilter)
 {
     Vector<int> ind;
 
@@ -301,11 +301,11 @@ void AStar::generate(Label* const current,
                      const Cost cost,
                      const Time goal_latest,
                      const Cost max_cost,
-                     const Vector<Node> waypoints,
+                     const Vector<Node>& waypoints,
                      const WPpassed goalPassed)
 {
     // Compute node-time.
-    const auto new_t = current->t + 1;
+    const Time new_t = current->t + 1;
 
     WPpassed wpp = current->w;
     auto it = find(waypoints.begin(), waypoints.end(), node);
@@ -316,8 +316,8 @@ void AStar::generate(Label* const current,
     const NodeTime nt(node, new_t, wpp);
 
     // Compute h_to_goal
-    auto findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
-    IntCost h_to_goal;
+    const Vector<int> findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
+    IntCost h_to_goal = 0;
     switch(findeces.size())
     {
         case 0:
@@ -562,7 +562,7 @@ void AStar::generate_neighbours(Label* const current,
                                 const Time goal_earliest,
                                 const Time goal_latest,
                                 const Cost max_cost,
-                                const Vector<Node> waypoints,
+                                const Vector<Node>& waypoints,
                                 const WPpassed goalPassed)
 {
     // Print.
@@ -668,7 +668,7 @@ void AStar::generate_neighbours<true, 0>(Label* const current,
                                          const Time goal_earliest,
                                          const Time goal_latest,
                                          const Cost max_cost,
-                                         const Vector<Node> waypoints,
+                                         const Vector<Node>& waypoints,
                                          const WPpassed goalPassed);
 template
 void AStar::generate_neighbours<true, 1>(Label* const current,
@@ -676,7 +676,7 @@ void AStar::generate_neighbours<true, 1>(Label* const current,
                                          const Time goal_earliest,
                                          const Time goal_latest,
                                          const Cost max_cost,
-                                         const Vector<Node> waypoints,
+                                         const Vector<Node>& waypoints,
                                          const WPpassed goalPassed);
 
 template<bool is_farkas>
@@ -685,7 +685,7 @@ Pair<Vector<NodeTime>, Cost> AStar::solve(const NodeTime start,
                                           const Time goal_earliest,
                                           const Time goal_latest,
                                           const Cost max_cost,
-                                          const std::vector<Node> waypoints,
+                                          const Vector<Node>& waypoints,
                                           const WPpassed waypoints_to_visit)
 {
     return solve_internal<true, is_farkas>(start, goal, goal_earliest, goal_latest, max_cost, waypoints, waypoints_to_visit);
@@ -695,14 +695,14 @@ template Pair<Vector<NodeTime>, Cost> AStar::solve<false>(const NodeTime start,
                                                           const Time goal_earliest,
                                                           const Time goal_latest,
                                                           const Cost max_cost,
-                                                          const std::vector<Node> waypoints,
+                                                          const Vector<Node>& waypoints,
                                                           const WPpassed waypoints_to_visit);
 template Pair<Vector<NodeTime>, Cost> AStar::solve<true>(const NodeTime start,
                                                          const Node goal,
                                                          const Time goal_earliest,
                                                          const Time goal_latest,
                                                          const Cost max_cost,
-                                                         const std::vector<Node> waypoints,
+                                                         const Vector<Node>& waypoints,
                                                          const WPpassed waypoints_to_visit);
 
 template<bool without_resources, bool is_farkas>
@@ -711,7 +711,7 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
                                                    const Time goal_earliest,
                                                    const Time goal_latest,
                                                    const Cost max_cost,
-                                                   const std::vector<Node> waypoints,
+                                                   const Vector<Node>& waypoints,
                                                    const WPpassed waypoints_to_visit)
 {
 
@@ -882,14 +882,14 @@ template Pair<Vector<NodeTime>, Cost> AStar::solve_internal<true, false>(const N
                                                                          const Time goal_earliest,
                                                                          const Time goal_latest,
                                                                          const Cost max_cost,
-                                                                         const std::vector<Node> waypoints,
+                                                                         const Vector<Node>& waypoints,
                                                                          const WPpassed waypoints_to_visit);
 template Pair<Vector<NodeTime>, Cost> AStar::solve_internal<true, true>(const NodeTime start,
                                                                         const Node goal,
                                                                         const Time goal_earliest,
                                                                         const Time goal_latest,
                                                                         const Cost max_cost,
-                                                                        const std::vector<Node> waypoints,
+                                                                        const Vector<Node>& waypoints,
                                                                         const WPpassed waypoints_to_visit);
 
 #ifdef DEBUG

@@ -90,6 +90,19 @@ Vector<int> filterWaypoints(const Vector<Node>& waypoints, WPpassed toFilter)
     return ind;
 }
 
+int countBits(WPpassed bits)
+{
+    int output = 0;
+
+    while(bits > 0)
+    {
+        bits &= bits-1;
+        output++;
+    }
+
+    return output;
+}
+
 AStar::AStar(const Map& map)
     : map_(map),
       label_pool_(),
@@ -318,7 +331,7 @@ void AStar::generate(Label* const current,
     // Compute h_to_goal
     const Vector<int> findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
     IntCost h_to_goal = 0;
-    switch(findeces.size())
+    switch(countBits(wpp & (~goalPassed)))
     {
         case 0:
         {
@@ -332,41 +345,25 @@ void AStar::generate(Label* const current,
         }
         default:
         {
-            IntCost dist1 = 1e7;
-            for (int i = 0; i < findeces.size(); i++)
-            {
-                IntCost dist2 = 0;
-                for (int j = 0; j < findeces.size(); j++)
-                {
-                    if (i != j)
-                    {
-                        const IntCost tmp_d2 = (*h_waypoints_[findeces[j]])[waypoints[findeces[i]]] + (*h_)[waypoints[findeces[j]]] + (*h_waypoints_[findeces[i]])[nt.n];
-                        if (tmp_d2 > dist2)
-                        {
-                            dist2 = tmp_d2;
-                        }
-                    }
-                }
-//                const IntCost tmp_d1 = (*h_)[waypoints[findeces[i]]] + (*h_waypoints_[findeces[i]])[nt.n];
-                if (dist2 < dist1)
-                {
-                    dist1 = dist2;
-                }
-            }
-            h_to_goal = dist1;
-
-
-
-
-
 //            IntCost dist1 = 1e7;
 //            for (int i = 0; i < findeces.size(); i++)
 //            {
-//                const IntCost tmp_d1 = (*h_waypoints_[findeces[i]])[nt.n];
-////                const IntCost tmp_d1 = (*h_waypoints_[findeces[i]])[nt.n] + (*h_)[waypoints[findeces[i]]];
-//                if (tmp_d1 < dist1)
+//                IntCost dist2 = 0;
+//                for (int j = 0; j < findeces.size(); j++)
 //                {
-//                    dist1 = tmp_d1;
+//                    if (i != j)
+//                    {
+//                        const IntCost tmp_d2 = (*h_waypoints_[findeces[j]])[waypoints[findeces[i]]] + (*h_)[waypoints[findeces[j]]] + (*h_waypoints_[findeces[i]])[nt.n];
+//                        if (tmp_d2 > dist2)
+//                        {
+//                            dist2 = tmp_d2;
+//                        }
+//                    }
+//                }
+////                const IntCost tmp_d1 = (*h_)[waypoints[findeces[i]]] + (*h_waypoints_[findeces[i]])[nt.n];
+//                if (dist2 < dist1)
+//                {
+//                    dist1 = dist2;
 //                }
 //            }
 //            h_to_goal = dist1;
@@ -374,52 +371,46 @@ void AStar::generate(Label* const current,
 
 
 
-//            Vector<IntCost> minDists;
-//            IntCost sumDists = 0;
-//            Vector<IntCost> goalDists;
-//            // Calculate minimum distance between waypoints and to goal
-//            for (int i = 0; i < findeces.size(); i++)
-//            {
-//                IntCost tmp_min = 1e7;
-//                IntCost tmp_min_goal = 1e7;
-//                for (int j = 0; j < findeces.size(); j++)
-//                {
-//                    if (i != j)
-//                    {
-//                        // Min dist between waypints
-//                        const IntCost figgamejig = (*h_waypoints_[findeces[i]])[waypoints[findeces[j]]];
-//                        if (figgamejig < tmp_min)
-//                        {
-//                            tmp_min = figgamejig;
-//                        }
-//                        // Min dist to goal
-//                        const IntCost figgamejig2 = (*h_)[waypoints[findeces[j]]];
-//                        if (figgamejig2 < tmp_min_goal)
-//                        {
-//                            tmp_min_goal = figgamejig2;
-//                        }
-//                    }
-//                }
-//                minDists.push_back(tmp_min);
-//                goalDists.push_back(tmp_min_goal);
-//                sumDists += tmp_min;
-//            }
-//
-//            // Calculate min h
-////            IntCost dist1 = 1e7;
-//            dist1 = 1e7;
-//            for (int i = 0; i < findeces.size(); i++)
-//            {
-//                const IntCost tmp_h = (*h_waypoints_[findeces[i]])[nt.n] + sumDists - minDists[i] + goalDists[i];
-////                println("{} {} {} {} {}", tmp_h, (*h_waypoints_[findeces[i]])[nt.n], sumDists, minDists[i], goalDists[i]); // REMOVE
-//                if (tmp_h < dist1)
-//                {
-//                    dist1 = tmp_h;
-//                }
-//            }
-////            println(""); // REMOVE
-////            h_to_goal = dist1;
-//            h_to_goal = (h_to_goal + dist1)/2;
+
+
+
+
+
+            IntCost sumDists = 0;
+            // Calculate min h
+            IntCost dist1 = 1e7;
+            // Calculate minimum distance between waypoints and to goal
+            for (int i = 0; i < findeces.size(); i++)
+            {
+                IntCost tmp_min = 1e7;
+                IntCost tmp_min_goal = 1e7;
+                IntCost curr_dist = (*h_waypoints_[findeces[i]])[nt.n];
+                for (int j = 0; j < findeces.size(); j++)
+                {
+                    if (i != j)
+                    {
+                        // Min dist between waypints
+                        const IntCost figgamejig = (*h_waypoints_[findeces[i]])[waypoints[findeces[j]]];
+                        if (figgamejig < tmp_min)
+                        {
+                            tmp_min = figgamejig;
+                        }
+                        // Min dist to goal
+                        const IntCost figgamejig2 = (*h_)[waypoints[findeces[j]]];
+                        if (figgamejig2 < tmp_min_goal)
+                        {
+                            tmp_min_goal = figgamejig2;
+                        }
+                    }
+                }
+                if (curr_dist +tmp_min_goal - tmp_min < dist1)
+                {
+                    dist1 = curr_dist + tmp_min_goal - tmp_min;
+                }
+                sumDists += tmp_min;
+            }
+
+            h_to_goal = dist1 + sumDists;
         }
     }
 

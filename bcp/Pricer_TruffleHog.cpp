@@ -653,7 +653,7 @@ SCIP_RETCODE run_trufflehog_pricer(
 
         // Modify edge costs for vertex branching decisions.
         Vector<NodeTime> segments;
-        segments.push_back(NodeTime{start, 0, (1 << waypoints.size()) - 1});
+        segments.push_back(NodeTime{start, 0, (1ul << waypoints.size()) - 1});
         for (Int c = 0; c < n_vertex_branching_conss; ++c)
         {
             // Get the constraint.

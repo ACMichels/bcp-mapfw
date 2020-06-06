@@ -10,7 +10,7 @@
 #include <Problem.h>
 
 const std::string _ALGORITHM = "BCP";
-const std::string _VERSION = "heuristic-based waypoints 64";
+const std::string _VERSION = "TSP waypoints";
 
 
 struct MemoryStruct {

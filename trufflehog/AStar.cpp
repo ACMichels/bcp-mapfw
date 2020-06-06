@@ -21,6 +21,7 @@ Author: Edward Lam <ed@ed-lam.com>
 
 #include "AStar.h"
 #include <cstddef>
+#include <queue>
 
 #define isLE(x,y) ((x)-(y) <= (1e-06))
 
@@ -75,11 +76,11 @@ String make_goal_state_string(const std::byte* const state, const Int nb_goal_cr
 }
 #endif
 
-Vector<int> filterWaypoints(Vector<Node> waypoints, WPpassed toFilter)
+Vector<int> filterWaypoints(Vector<Node>& waypoints, WPpassed toFilter)
 {
     Vector<int> ind;
 
-    for (int i = 0; i < waypoints.size(); i++)
+    for (int i = 0; i < waypoints.size()-1; i++)
     {
         if (toFilter % 2)
         {
@@ -88,6 +89,49 @@ Vector<int> filterWaypoints(Vector<Node> waypoints, WPpassed toFilter)
         toFilter = toFilter >> 1;
     }
     return ind;
+}
+
+IntCost AStar::TSP_heuristic(const Node n, Vector<Node>& waypoints, const WPpassed visited, const std::vector<int>& waypointInd)
+{
+    int goal_ind = waypointInd[waypointInd.size()-1];
+
+    std::vector<int> waypoint_ind_to_visit;
+
+    for (int i = 0; i < waypointInd.size(); i++)
+    {
+        if (~visited & (1 << waypointInd[i]))
+        {
+            waypoint_ind_to_visit.push_back(waypointInd[i]);
+        }
+    }
+
+    // Calc shortest distance to waypoints
+    IntCost shortest_dists_sum = 0;
+    for (int i = 0; i < waypoint_ind_to_visit.size(); i++)
+    {
+
+        // Dist between nodes
+        IntCost shortest_dists_tmp = 1e7;
+        for (int j = 0; j < waypoint_ind_to_visit.size(); j++)
+        {
+            if (i != j)
+            {
+                IntCost tmp = (*h_waypoints_[waypoint_ind_to_visit[i]])[waypoints[waypoint_ind_to_visit[j]]];
+                if (tmp < shortest_dists_tmp)
+                {
+                    shortest_dists_tmp = tmp;
+                }
+            }
+        }
+        // And from the next node to other nodes
+        IntCost tmp2 = (*h_waypoints_[waypoint_ind_to_visit[i]])[n];
+        if (tmp2 < shortest_dists_tmp)
+        {
+            shortest_dists_tmp = tmp2;
+        }
+        shortest_dists_sum += shortest_dists_tmp;
+    }
+    return shortest_dists_sum;
 }
 
 AStar::AStar(const Map& map)
@@ -101,7 +145,7 @@ AStar::AStar(const Map& map)
 #endif
       open_(map.size()),
       frontier_without_resources_(),
-      h_(nullptr),
+      h_waypoints_(),
       time_finish_h_()
 #ifdef DEBUG
     , nb_labels_(0)
@@ -186,7 +230,7 @@ void AStar::generate_start(const NodeTime start)
     // Create label.
     auto new_label = reinterpret_cast<Label*>(label_pool_.get_label_buffer());
     memset(new_label, 0, label_pool_.label_size());
-    const auto h_to_goal = (*h_)[start.n];
+    const auto h_to_goal = 0;//(*h_)[start.n];
     const auto h_to_finish = start.t + h_to_goal < static_cast<Int>(time_finish_h_.size()) ?
                              time_finish_h_[start.t + h_to_goal] :
                              0.0;
@@ -301,125 +345,31 @@ void AStar::generate(Label* const current,
                      const Cost cost,
                      const Time goal_latest,
                      const Cost max_cost,
-                     const Vector<Node> waypoints,
-                     const WPpassed goalPassed)
+                     const Vector<Node>& waypoints,
+                     const WPpassed goalPassed,
+                     const std::vector<int>& waypointInd)
 {
     // Compute node-time.
     const auto new_t = current->t + 1;
 
     WPpassed wpp = current->w;
-    auto it = find(waypoints.begin(), waypoints.end(), node);
-    if (it != waypoints.end())
+
+    int ind = 0;
+    for (; ind < waypointInd.size()-1 && (wpp & (1ul << waypointInd[ind])) == 0; ind++) {}
+    IntCost h_to_goal = 0;
+    if (node == waypoints[waypointInd[ind]])
     {
-        wpp &= ~(1<<(it-waypoints.begin()));
+        wpp &= ~(1ul<<(waypointInd[ind]));
+        ind++;
     }
     const NodeTime nt(node, new_t, wpp);
-
-    // Compute h_to_goal
-    auto findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
-    IntCost h_to_goal;
-    switch(findeces.size())
+    if (ind < waypointInd.size())
     {
-        case 0:
+        Node last_node = nt.n;
+        for (; ind < waypointInd.size(); ind++)
         {
-            h_to_goal = (*h_)[nt.n];
-            break;
-        }
-        case 1:
-        {
-            h_to_goal = (*h_)[waypoints[findeces[0]]] + (*h_waypoints_[findeces[0]])[nt.n];
-            break;
-        }
-        default:
-        {
-            IntCost dist1 = 1e7;
-            for (int i = 0; i < findeces.size(); i++)
-            {
-                IntCost dist2 = 0;
-                for (int j = 0; j < findeces.size(); j++)
-                {
-                    if (i != j)
-                    {
-                        const IntCost tmp_d2 = (*h_waypoints_[findeces[j]])[waypoints[findeces[i]]] + (*h_)[waypoints[findeces[j]]] + (*h_waypoints_[findeces[i]])[nt.n];
-                        if (tmp_d2 > dist2)
-                        {
-                            dist2 = tmp_d2;
-                        }
-                    }
-                }
-//                const IntCost tmp_d1 = (*h_)[waypoints[findeces[i]]] + (*h_waypoints_[findeces[i]])[nt.n];
-                if (dist2 < dist1)
-                {
-                    dist1 = dist2;
-                }
-            }
-            h_to_goal = dist1;
-
-
-
-
-
-//            IntCost dist1 = 1e7;
-//            for (int i = 0; i < findeces.size(); i++)
-//            {
-//                const IntCost tmp_d1 = (*h_waypoints_[findeces[i]])[nt.n];
-////                const IntCost tmp_d1 = (*h_waypoints_[findeces[i]])[nt.n] + (*h_)[waypoints[findeces[i]]];
-//                if (tmp_d1 < dist1)
-//                {
-//                    dist1 = tmp_d1;
-//                }
-//            }
-//            h_to_goal = dist1;
-
-
-
-
-//            Vector<IntCost> minDists;
-//            IntCost sumDists = 0;
-//            Vector<IntCost> goalDists;
-//            // Calculate minimum distance between waypoints and to goal
-//            for (int i = 0; i < findeces.size(); i++)
-//            {
-//                IntCost tmp_min = 1e7;
-//                IntCost tmp_min_goal = 1e7;
-//                for (int j = 0; j < findeces.size(); j++)
-//                {
-//                    if (i != j)
-//                    {
-//                        // Min dist between waypints
-//                        const IntCost figgamejig = (*h_waypoints_[findeces[i]])[waypoints[findeces[j]]];
-//                        if (figgamejig < tmp_min)
-//                        {
-//                            tmp_min = figgamejig;
-//                        }
-//                        // Min dist to goal
-//                        const IntCost figgamejig2 = (*h_)[waypoints[findeces[j]]];
-//                        if (figgamejig2 < tmp_min_goal)
-//                        {
-//                            tmp_min_goal = figgamejig2;
-//                        }
-//                    }
-//                }
-//                minDists.push_back(tmp_min);
-//                goalDists.push_back(tmp_min_goal);
-//                sumDists += tmp_min;
-//            }
-//
-//            // Calculate min h
-////            IntCost dist1 = 1e7;
-//            dist1 = 1e7;
-//            for (int i = 0; i < findeces.size(); i++)
-//            {
-//                const IntCost tmp_h = (*h_waypoints_[findeces[i]])[nt.n] + sumDists - minDists[i] + goalDists[i];
-////                println("{} {} {} {} {}", tmp_h, (*h_waypoints_[findeces[i]])[nt.n], sumDists, minDists[i], goalDists[i]); // REMOVE
-//                if (tmp_h < dist1)
-//                {
-//                    dist1 = tmp_h;
-//                }
-//            }
-////            println(""); // REMOVE
-////            h_to_goal = dist1;
-//            h_to_goal = (h_to_goal + dist1)/2;
+            h_to_goal += (*h_waypoints_[waypointInd[ind]])[last_node];
+            last_node = waypoints[waypointInd[ind]];
         }
     }
 
@@ -558,11 +508,11 @@ void AStar::generate(Label* const current,
 
 template<bool without_resources, IntCost default_cost>
 void AStar::generate_neighbours(Label* const current,
-                                const Node goal,
+                                const std::vector<int>& waypointInd,
                                 const Time goal_earliest,
                                 const Time goal_latest,
                                 const Cost max_cost,
-                                const Vector<Node> waypoints,
+                                const Vector<Node>& waypoints,
                                 const WPpassed goalPassed)
 {
     // Print.
@@ -609,7 +559,8 @@ void AStar::generate_neighbours(Label* const current,
                                     goal_latest,
                                     max_cost,
                                     waypoints,
-                                    goalPassed);
+                                    goalPassed,
+                                    waypointInd);
     }
     if (const auto next_n = map_.get_south(current_n);
         map_[next_n] && !std::isnan(edge_costs.south))
@@ -620,7 +571,8 @@ void AStar::generate_neighbours(Label* const current,
                                     goal_latest,
                                     max_cost,
                                     waypoints,
-                                    goalPassed);
+                                    goalPassed,
+                                    waypointInd);
     }
     if (const auto next_n = map_.get_east(current_n);
         map_[next_n] && !std::isnan(edge_costs.east))
@@ -631,7 +583,8 @@ void AStar::generate_neighbours(Label* const current,
                                     goal_latest,
                                     max_cost,
                                     waypoints,
-                                    goalPassed);
+                                    goalPassed,
+                                    waypointInd);
     }
     if (const auto next_n = map_.get_west(current_n);
         map_[next_n] && !std::isnan(edge_costs.west))
@@ -642,7 +595,8 @@ void AStar::generate_neighbours(Label* const current,
                                     goal_latest,
                                     max_cost,
                                     waypoints,
-                                    goalPassed);
+                                    goalPassed,
+                                    waypointInd);
     }
     if (const auto next_n = map_.get_wait(current_n);
         map_[next_n] && !std::isnan(edge_costs.wait))
@@ -653,30 +607,36 @@ void AStar::generate_neighbours(Label* const current,
                                     goal_latest,
                                     max_cost,
                                     waypoints,
-                                    goalPassed);
+                                    goalPassed,
+                                    waypointInd);
     }
 
     // Expand to the end dummy node.
-    if (current_n == goal && current->t >= goal_earliest && (current->w & ~goalPassed) == 0)
+    if (current_n == waypoints[waypointInd[waypointInd.size()-1]] && current->t >= goal_earliest && (current->w & ~goalPassed) == 0)
     {
         generate_end(current, max_cost);
     }
+
+//    if (current_n == waypoints[waypointInd[waypointInd.size()-1]] && current->t >= goal_earliest && (current->w & ~goalPassed) != 0)
+//    {
+//        println("wut"); // REMOVE
+//    }
 }
 template
 void AStar::generate_neighbours<true, 0>(Label* const current,
-                                         const Node goal,
+                                         const std::vector<int>& waypointInd,
                                          const Time goal_earliest,
                                          const Time goal_latest,
                                          const Cost max_cost,
-                                         const Vector<Node> waypoints,
+                                         const Vector<Node>& waypoints,
                                          const WPpassed goalPassed);
 template
 void AStar::generate_neighbours<true, 1>(Label* const current,
-                                         const Node goal,
+                                         const std::vector<int>& waypointInd,
                                          const Time goal_earliest,
                                          const Time goal_latest,
                                          const Cost max_cost,
-                                         const Vector<Node> waypoints,
+                                         const Vector<Node>& waypoints,
                                          const WPpassed goalPassed);
 
 template<bool is_farkas>
@@ -685,36 +645,101 @@ Pair<Vector<NodeTime>, Cost> AStar::solve(const NodeTime start,
                                           const Time goal_earliest,
                                           const Time goal_latest,
                                           const Cost max_cost,
-                                          const std::vector<Node> waypoints,
+                                          const std::vector<Node>& waypoints,
                                           const WPpassed waypoints_to_visit)
 {
-    return solve_internal<true, is_farkas>(start, goal, goal_earliest, goal_latest, max_cost, waypoints, waypoints_to_visit);
+    // Solve TSP
+    std::vector<Node> waypointsWithGoal = waypoints;
+    waypointsWithGoal.push_back(goal);
+
+    // Clear waypoints
+    h_waypoints_.clear();
+
+    // Setup waypoints
+    for (int i = 0; i < waypointsWithGoal.size(); i++)
+    {
+        h_waypoints_.push_back(&heuristic_.compute_h(waypointsWithGoal[i]));
+    }
+
+
+    const int goal_index = waypointsWithGoal.size()-1;
+    const WPpassed allWP = (1ul << goal_index)-1;
+    const WPpassed WPToVisitTotal = allWP & start.w & ~waypoints_to_visit;
+
+    // vector for Labels
+    std::priority_queue<TSP_Label, std::deque<TSP_Label>, TSPLabelCompare> TSP_pqueue;
+
+    auto findeces = filterWaypoints(waypointsWithGoal, WPToVisitTotal);
+    if (findeces.size() == 0)
+    {
+        return solve_internal<true, is_farkas>(start, std::vector<int>{goal_index}, goal_earliest, goal_latest, max_cost, waypointsWithGoal, waypoints_to_visit);
+    }
+
+    TSP_pqueue.push({std::vector<Node>(), 0, 0});
+
+    while(!TSP_pqueue.empty())
+    {
+        TSP_Label lab = TSP_pqueue.top();
+        TSP_pqueue.pop();
+
+        if (lab.order.size() == findeces.size() + 1)
+        {
+            return {lab.path, lab.cost};
+//            break;
+        }
+        else
+        {
+            auto findeces2 = filterWaypoints(waypointsWithGoal, WPToVisitTotal & ~lab.visited_wp);
+            for (int i = 0; i < findeces2.size(); i++)
+            {
+                std::vector tmpv = lab.order;
+                tmpv.push_back(findeces2[i]);
+                WPpassed wpVisited = lab.visited_wp | (1ul << findeces2[i]);
+                if (findeces2.size() == 1)
+                {
+                    tmpv.push_back(goal_index);
+                }
+                auto result = solve_internal<true, is_farkas>(start, tmpv, goal_earliest, goal_latest, max_cost, waypointsWithGoal, allWP ^ wpVisited);
+                if (result.second > 0)
+                {
+                    const Cost cost = result.second;
+                    Vector<NodeTime> path = findeces2.size() == 1 ? result.first : Vector<NodeTime>();
+                    IntCost heur_dist = findeces2.size() == 1 ? 0 : TSP_heuristic(waypoints[findeces2[i]], waypointsWithGoal, wpVisited, tmpv);
+                    TSP_pqueue.push({tmpv, cost + heur_dist, wpVisited, path});
+                    if (cost + heur_dist < lab.cost)
+                    {
+                        println("HELLUP {} {}", cost + heur_dist, lab.cost); // REMOVE
+                    }
+                }
+            }
+        }
+    }
+    return Pair<Vector<NodeTime>, Cost>();
 }
 template Pair<Vector<NodeTime>, Cost> AStar::solve<false>(const NodeTime start,
                                                           const Node goal,
                                                           const Time goal_earliest,
                                                           const Time goal_latest,
                                                           const Cost max_cost,
-                                                          const std::vector<Node> waypoints,
+                                                          const std::vector<Node>& waypoints,
                                                           const WPpassed waypoints_to_visit);
 template Pair<Vector<NodeTime>, Cost> AStar::solve<true>(const NodeTime start,
                                                          const Node goal,
                                                          const Time goal_earliest,
                                                          const Time goal_latest,
                                                          const Cost max_cost,
-                                                         const std::vector<Node> waypoints,
+                                                         const std::vector<Node>& waypoints,
                                                          const WPpassed waypoints_to_visit);
 
 template<bool without_resources, bool is_farkas>
 Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
-                                                   const Node goal,
+                                                   const std::vector<int>& waypointInd,
                                                    const Time goal_earliest,
                                                    const Time goal_latest,
                                                    const Cost max_cost,
-                                                   const std::vector<Node> waypoints,
+                                                   const std::vector<Node>& waypoints,
                                                    const WPpassed waypoints_to_visit)
 {
-
     // Create output.
     Pair<Vector<NodeTime>, Cost> output;
     auto& path = output.first;
@@ -722,16 +747,6 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
 
     // Get h values to the goal node. Compute them if necessary.
     debug_assert(heuristic_.max_path_length() >= 1);
-    h_ = &heuristic_.compute_h(goal);
-
-    // Clear waypoints
-    h_waypoints_.clear();
-
-    // Setup waypoints
-    for (int i = 0; i < waypoints.size(); i++)
-    {
-        h_waypoints_.push_back(&heuristic_.compute_h(waypoints[i]));
-    }
 
     // Calculate the default edge cost.
     constexpr IntCost default_cost = is_farkas ? 0 : 1;
@@ -781,18 +796,18 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
         frontier_without_resources_.clear();
     }
 
-    // Compute h-value to reach the end dummy node.
-    time_finish_h_.resize(time_finish_penalties_.size());
-    std::copy(time_finish_penalties_.begin(), time_finish_penalties_.end(), time_finish_h_.begin());
-    for (Time t = 0; t < static_cast<Time>(time_finish_h_.size()); ++t)
-    {
-        time_finish_h_[t] = time_finish_penalties_.size() - t;
-        for (Time i = t; i < static_cast<Time>(time_finish_penalties_.size()); ++i)
-            if (i - t + time_finish_penalties_[i] < time_finish_h_[t])
-            {
-                time_finish_h_[t] = i - t + time_finish_penalties_[i];
-            }
-    }
+//    // Compute h-value to reach the end dummy node.
+//    time_finish_h_.resize(time_finish_penalties_.size());
+//    std::copy(time_finish_penalties_.begin(), time_finish_penalties_.end(), time_finish_h_.begin());
+//    for (Time t = 0; t < static_cast<Time>(time_finish_h_.size()); ++t)
+//    {
+//        time_finish_h_[t] = time_finish_penalties_.size() - t;
+//        for (Time i = t; i < static_cast<Time>(time_finish_penalties_.size()); ++i)
+//            if (i - t + time_finish_penalties_[i] < time_finish_h_[t])
+//            {
+//                time_finish_h_[t] = i - t + time_finish_penalties_[i];
+//            }
+//    }
 
     // Create label at the start node-time.
     generate_start<without_resources>(start);
@@ -809,7 +824,7 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
         {
             // Generate neighbours.
             generate_neighbours<without_resources, default_cost>(current,
-                                                                 goal,
+                                                                 waypointInd,
                                                                  goal_earliest,
                                                                  goal_latest,
                                                                  max_cost,
@@ -878,18 +893,18 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
     return output;
 }
 template Pair<Vector<NodeTime>, Cost> AStar::solve_internal<true, false>(const NodeTime start,
-                                                                         const Node goal,
+                                                                         const std::vector<int>& waypointInd,
                                                                          const Time goal_earliest,
                                                                          const Time goal_latest,
                                                                          const Cost max_cost,
-                                                                         const std::vector<Node> waypoints,
+                                                                         const std::vector<Node>& waypoints,
                                                                          const WPpassed waypoints_to_visit);
 template Pair<Vector<NodeTime>, Cost> AStar::solve_internal<true, true>(const NodeTime start,
-                                                                        const Node goal,
+                                                                        const std::vector<int>& waypointInd,
                                                                         const Time goal_earliest,
                                                                         const Time goal_latest,
                                                                         const Cost max_cost,
-                                                                        const std::vector<Node> waypoints,
+                                                                        const std::vector<Node>& waypoints,
                                                                         const WPpassed waypoints_to_visit);
 
 #ifdef DEBUG

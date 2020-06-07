@@ -329,7 +329,6 @@ void AStar::generate(Label* const current,
     const NodeTime nt(node, new_t, wpp);
 
     // Compute h_to_goal
-//    const Vector<int> findeces = filterWaypoints(waypoints, wpp & (~goalPassed));
     IntCost h_to_goal = 0;
     switch(countBits(wpp & (~goalPassed)))
     {
@@ -354,36 +353,11 @@ void AStar::generate(Label* const current,
         }
         default:
         {
-//            IntCost dist1 = 1e7;
-//            for (int i = 0; i < findeces.size(); i++)
-//            {
-//                IntCost dist2 = 0;
-//                for (int j = 0; j < findeces.size(); j++)
-//                {
-//                    if (i != j)
-//                    {
-//                        const IntCost tmp_d2 = (*h_waypoints_[findeces[j]])[waypoints[findeces[i]]] + (*h_)[waypoints[findeces[j]]] + (*h_waypoints_[findeces[i]])[nt.n];
-//                        if (tmp_d2 > dist2)
-//                        {
-//                            dist2 = tmp_d2;
-//                        }
-//                    }
-//                }
-////                const IntCost tmp_d1 = (*h_)[waypoints[findeces[i]]] + (*h_waypoints_[findeces[i]])[nt.n];
-//                if (dist2 < dist1)
-//                {
-//                    dist1 = dist2;
-//                }
-//            }
-//            h_to_goal = dist1;
-
-
 
             IntCost sumDists = 0;
             // Calculate min h
             IntCost dist1 = 1e7;
             // Calculate minimum distance between waypoints and to goal
-//            for (int i = 0; i < findeces.size(); i++)
             WPpassed filter1 = wpp & (~goalPassed);
             for (int i = 0; i < waypoints.size(); i++)
             {
@@ -391,7 +365,7 @@ void AStar::generate(Label* const current,
                 {
                     IntCost tmp_min = 1e7;
                     IntCost tmp_min_goal = 1e7;
-                    IntCost curr_dist = (*h_waypoints_[i])[nt.n];
+                    const IntCost curr_dist = (*h_waypoints_[i])[nt.n];
                     WPpassed filter2 = wpp & (~goalPassed);
                     for (int j = 0; j < waypoints.size(); j++)
                     {

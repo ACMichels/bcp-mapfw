@@ -48,7 +48,10 @@ Problem::Problem(const nlohmann::json& problem_json)
         }
         for (int j = 0; j < wpcount; j++)
         {
-            waypoints[i].push_back(coord(problem_data_json["waypoints"][i][j][0], problem_data_json["waypoints"][i][j][1]));
+            if (!(problem_data_json["waypoints"][i][j][0] == start_coords[i].x && problem_data_json["waypoints"][i][j][1] == start_coords[i].y))
+            {
+                waypoints[i].push_back(coord(problem_data_json["waypoints"][i][j][0], problem_data_json["waypoints"][i][j][1]));
+            }
         }
 
     }

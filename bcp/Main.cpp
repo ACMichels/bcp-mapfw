@@ -149,6 +149,7 @@ static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, 
 static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number, SCIP_Real time_limit, bool multi_threaded)
 {
     // Start benchmark clock
+    println("  Start solving {}", number);
     problem->start_clock();
 
     // Initialize SCIP.
@@ -164,9 +165,13 @@ static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number
         SCIP_CALL(SCIPsetRealParam(scip, "limits/time", time_limit));
     }
     // Solve.
-    println("Start solving {}", number);
-    SCIP_CALL(SCIPsolve(scip));
-    println("Finished solving {}", number);
+    try {
+        SCIP_CALL(SCIPsolve(scip));
+    }
+    catch (std::bad_alloc& ba)
+    {
+        println("bad_alloc caught: {}", ba.what());
+    }
 
     // Output.
     {
@@ -182,6 +187,7 @@ static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number
 
         // Stop benchmark clock
         problem->stop_clock();
+        println("{} Finished solving {:<4} {} ms", problem->solved ? "!" : " ", number, problem->elapsed.count());
     }
 
     // Clean up

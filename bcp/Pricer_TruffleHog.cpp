@@ -766,6 +766,10 @@ SCIP_RETCODE run_trufflehog_pricer(
         // Modify edge costs for length branching decisions.
         debug_assert(astar.max_path_length() >= 1);
         Time latest_finish = (waypoints.size() + 1) * astar.max_path_length() - 1;
+        if (latest_finish > 10000)
+        {
+            latest_finish = 10000;
+        }
         for (Int c = 0; c < n_length_branching_conss; ++c)
         {
             // Get the constraint.

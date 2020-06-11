@@ -93,7 +93,7 @@ Vector<int> filterWaypoints(Vector<Node>& waypoints, WPpassed toFilter)
 
 IntCost AStar::TSP_heuristic(const Node n, Vector<Node>& waypoints, const WPpassed visited, const std::vector<int>& waypointInd)
 {
-    int goal_ind = waypointInd[waypointInd.size()-1];
+    const int goal_ind = waypointInd[waypointInd.size()-1];
 
     std::vector<int> waypoint_ind_to_visit;
 

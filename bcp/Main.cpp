@@ -149,7 +149,7 @@ static SCIP_RETCODE run_file_solver(String instance_file, SCIP_Real time_limit, 
 static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number, SCIP_Real time_limit, bool multi_threaded)
 {
     // Start benchmark clock
-    println("Start solving {}", number);
+    println("  Start solving {}", number);
     problem->start_clock();
 
     // Initialize SCIP.
@@ -187,7 +187,7 @@ static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number
 
         // Stop benchmark clock
         problem->stop_clock();
-        println("Finished solving {}", number);
+        println("{} Finished solving {:<4} {} ms", problem->solved ? "!" : " ", number, problem->elapsed.count());
     }
 
     // Clean up

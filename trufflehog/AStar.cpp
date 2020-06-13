@@ -111,7 +111,7 @@ IntCost AStar::TSP_heuristic(const Node n, Vector<Node>& waypoints, const WPpass
     {
 
         // Dist between nodes
-        IntCost shortest_dists_tmp = 1e7;
+        IntCost shortest_dists_tmp = (*h_waypoints_[waypoint_ind_to_visit[i]])[n];
         for (int j = 0; j < waypoint_ind_to_visit.size(); j++)
         {
             if (i != j)
@@ -122,12 +122,6 @@ IntCost AStar::TSP_heuristic(const Node n, Vector<Node>& waypoints, const WPpass
                     shortest_dists_tmp = tmp;
                 }
             }
-        }
-        // And from the next node to other nodes
-        IntCost tmp2 = (*h_waypoints_[waypoint_ind_to_visit[i]])[n];
-        if (tmp2 < shortest_dists_tmp)
-        {
-            shortest_dists_tmp = tmp2;
         }
         shortest_dists_sum += shortest_dists_tmp;
     }
@@ -676,7 +670,6 @@ Pair<Vector<NodeTime>, Cost> AStar::solve(const NodeTime start,
     }
 
     TSP_pqueue.push({std::vector<Node>(), 0, 0});
-
     while(!TSP_pqueue.empty())
     {
         TSP_Label lab = TSP_pqueue.top();
@@ -704,7 +697,7 @@ Pair<Vector<NodeTime>, Cost> AStar::solve(const NodeTime start,
                 {
                     const Cost cost = result.second;
                     Vector<NodeTime> path = findeces2.size() == 1 ? result.first : Vector<NodeTime>();
-                    IntCost heur_dist = findeces2.size() == 1 ? 0 : TSP_heuristic(waypoints[findeces2[i]], waypointsWithGoal, wpVisited, tmpv);
+                    Cost heur_dist = findeces2.size() == 1 ? 0 : TSP_heuristic(waypoints[findeces2[i]], waypointsWithGoal, wpVisited, tmpv);
                     TSP_pqueue.push({tmpv, cost + heur_dist, wpVisited, path});
                     if (cost + heur_dist < lab.cost)
                     {
@@ -815,6 +808,7 @@ Pair<Vector<NodeTime>, Cost> AStar::solve_internal(const NodeTime start,
     // Main loop.
     while (!open_.empty())
     {
+
         // Get a label from priority queue.
         const auto current = open_.top();
         open_.pop();

@@ -31,6 +31,7 @@ Author: Edward Lam <ed@ed-lam.com>
 #include "Heuristic.h"
 #include <unordered_map>
 #include <functional>
+#include <chrono>
 
 namespace TruffleHog
 {

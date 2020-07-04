@@ -172,6 +172,10 @@ static SCIP_Retcode run_instance(int id, Problem* problem, int index, int number
     {
         println("bad_alloc caught: {}", ba.what());
     }
+    catch (std::overflow_error& oe)
+    {
+        println("Overflow error caught: {}", oe.what());
+    }
 
     // Output.
     {
